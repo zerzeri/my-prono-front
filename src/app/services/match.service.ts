@@ -4,12 +4,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { MatchDTO } from '../models';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MatchService {
-  private readonly baseUrl = '/api/matches';
+  private readonly baseUrl = `${environment.apiUrl}/matches`;
   private matchesSubject = new BehaviorSubject<MatchDTO[]>([]);
   public matches$ = this.matchesSubject.asObservable();
 

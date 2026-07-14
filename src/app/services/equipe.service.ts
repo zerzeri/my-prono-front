@@ -4,12 +4,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { EquipeDTO } from '../models';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EquipeService {
-  private readonly baseUrl = '/api/equipes';
+  private readonly baseUrl = `${environment.apiUrl}/equipes`;
   private equipesSubject = new BehaviorSubject<EquipeDTO[]>([]);
   public equipes$ = this.equipesSubject.asObservable();
 

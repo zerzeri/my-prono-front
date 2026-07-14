@@ -1,0 +1,5 @@
+node_modules
+dist
+.angular
+
+start-public.sh
