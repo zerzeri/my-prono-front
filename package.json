@@ -8,11 +8,12 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "generate-api": "npx @openapitools/openapi-generator-cli generate -i http://localhost:8001/v3/api-docs -g typescript-angular -o src/app/api",
-    "start:prod": "ng serve --host 0.0.0.0 --port $PORT --configuration production"
+    "build:prod": "ng build --configuration production",
+    "start:prod": "npx --yes http-server dist/my-pronostic-frontend -p $PORT -a 0.0.0.0 -P http://localhost:$PORT?"
   },
   "private": true,
   "dependencies": {
-    "@angular/animations": "^19.0.0",
+    "@angular/animations": "19.2.14",
     "@angular/common": "^19.0.0",
     "@angular/compiler": "^19.0.0",
     "@angular/core": "^19.0.0",
