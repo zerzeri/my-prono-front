@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://my-prono-back.onrender.com/api'
+  apiUrl: 'https://my-pronostic-backend.onrender.com/api'
 };
