@@ -18,6 +18,7 @@ import { AuthService } from './services/auth.service';
 
         <nav class="nav">
           <a routerLink="/matches" routerLinkActive="active" class="nav-link">Matchs</a>
+          <a *ngIf="auth.user$ | async" routerLink="/ligues" routerLinkActive="active" class="nav-link">Ligues</a>
           <a *ngIf="(auth.user$ | async)?.role === 'ADMIN'" routerLink="/admin" routerLinkActive="active" class="nav-link">Administration</a>
         </nav>
 
@@ -177,11 +178,44 @@ import { AuthService } from './services/auth.service';
 
     @media (max-width: 640px) {
       .header-inner {
-        gap: 1rem;
+        height: auto;
+        flex-wrap: wrap;
+        gap: 0.5rem 0.75rem;
+        padding: 0.6rem 1rem;
+      }
+
+      .brand {
+        margin-right: auto;
+      }
+
+      .brand-icon {
+        font-size: 1.3rem;
       }
 
       .brand-name {
-        display: none;
+        font-size: 1.05rem;
+      }
+
+      .nav {
+        order: 3;
+        width: 100%;
+        flex: none;
+      }
+
+      .nav-link {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.85rem;
+      }
+
+      .admin-toggle {
+        max-width: 118px;
+        font-size: 0.72rem;
+        padding: 0.35rem 0.6rem;
+        gap: 0.35rem;
+      }
+
+      .main-content {
+        margin: 1.25rem auto;
       }
     }
   `]

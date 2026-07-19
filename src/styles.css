@@ -344,3 +344,26 @@ select {
   font-size: 0.85rem;
   flex-wrap: wrap;
 }
+
+/* ===== Champ mot de passe avec oeil ===== */
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-right: 2.75rem;
+}
+
+.toggle-eye {
+  position: absolute;
+  right: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 1.05rem;
+  line-height: 1;
+  padding: 0.45rem;
+  cursor: pointer;
+  color: var(--muted);
+}

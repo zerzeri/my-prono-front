@@ -25,13 +25,25 @@ import { AuthService } from '../../services/auth.service';
           </div>
           <div class="form-group">
             <label for="password">Mot de passe (6 caractères min.)</label>
-            <input type="password" id="password" name="password" [(ngModel)]="password"
-                   placeholder="••••••••" autocomplete="new-password" required>
+            <div class="password-field">
+              <input [type]="showPassword ? 'text' : 'password'" id="password" name="password" [(ngModel)]="password"
+                     placeholder="••••••••" autocomplete="new-password" required>
+              <button type="button" class="toggle-eye" (click)="showPassword = !showPassword"
+                      [attr.aria-label]="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'">
+                {{ showPassword ? '🙈' : '👁️' }}
+              </button>
+            </div>
           </div>
           <div class="form-group">
             <label for="confirm">Confirmer le mot de passe</label>
-            <input type="password" id="confirm" name="confirm" [(ngModel)]="confirm"
-                   placeholder="••••••••" autocomplete="new-password" required>
+            <div class="password-field">
+              <input [type]="showConfirm ? 'text' : 'password'" id="confirm" name="confirm" [(ngModel)]="confirm"
+                     placeholder="••••••••" autocomplete="new-password" required>
+              <button type="button" class="toggle-eye" (click)="showConfirm = !showConfirm"
+                      [attr.aria-label]="showConfirm ? 'Masquer le mot de passe' : 'Afficher le mot de passe'">
+                {{ showConfirm ? '🙈' : '👁️' }}
+              </button>
+            </div>
           </div>
           <button type="submit" class="btn btn-primary"
                   [disabled]="loading || !email || password.length < 6 || password !== confirm">
@@ -57,6 +69,8 @@ export class RegisterComponent {
   confirm = '';
   error = '';
   loading = false;
+  showPassword = false;
+  showConfirm = false;
 
   constructor(private auth: AuthService, private router: Router) {}
 

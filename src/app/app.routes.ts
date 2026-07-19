@@ -37,5 +37,15 @@ export const routes: Routes = [
     path: 'account',
     canActivate: [authGuard],
     loadComponent: () => import('./components/account/account.component').then(m => m.AccountComponent)
+  },
+  {
+    path: 'ligues',
+    canActivate: [authGuard],
+    loadComponent: () => import('./components/ligues/ligues.component').then(m => m.LiguesComponent)
+  },
+  {
+    path: 'ligues/rejoindre',
+    canActivate: [authGuard],
+    loadComponent: () => import('./components/ligues/rejoindre.component').then(m => m.RejoindreLigueComponent)
   }
 ];
