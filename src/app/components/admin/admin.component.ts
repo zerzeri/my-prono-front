@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { MatchDTO, EquipeDTO } from '../../models';
 import { MatchService } from '../../services/match.service';
 import { EquipeService } from '../../services/equipe.service';
+import { ApiService } from '../../services/api.service';
 import { MatchFormComponent } from './match-form/match-form.component';
 
 @Component({
@@ -21,14 +22,19 @@ export class AdminComponent implements OnInit {
   editingMatch: MatchDTO | null = null;
   showMatchForm = false;
   loading = false;
-  
+
+  syncing = false;
+  syncMessage = '';
+  syncError = false;
+
   newEquipe: EquipeDTO = {
     name: ''
   };
 
   constructor(
     private matchService: MatchService,
-    private equipeService: EquipeService
+    private equipeService: EquipeService,
+    private apiService: ApiService
   ) {}
 
   ngOnInit() {
@@ -39,6 +45,28 @@ export class AdminComponent implements OnInit {
   setActiveTab(tab: string) {
     this.activeTab = tab;
     this.closeMatchForm();
+  }
+
+  syncWorldCup() {
+    this.syncing = true;
+    this.syncMessage = '';
+    this.syncError = false;
+    this.apiService.syncWorldCup().subscribe({
+      next: (result) => {
+        this.syncing = false;
+        this.syncMessage = `Synchronisation terminée : ${result.total} matchs traités — `
+          + `${result.equipesCreees} équipe(s) créée(s), ${result.matchsCrees} match(s) créé(s), `
+          + `${result.matchsMisAJour} mis à jour.`;
+        this.loadMatches();
+        this.loadEquipes();
+      },
+      error: (error) => {
+        console.error('Erreur lors de la synchronisation:', error);
+        this.syncing = false;
+        this.syncError = true;
+        this.syncMessage = 'Erreur lors de la synchronisation. Réessayez dans quelques instants.';
+      }
+    });
   }
 
   loadMatches() {

@@ -127,3 +127,23 @@
   color: var(--muted);
   text-align: center;
 }
+
+.prono-hint {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 0.4rem;
+}
+
+.login-invite {
+  font-size: 0.9rem;
+  color: var(--text-2);
+  text-align: center;
+}
+
+.my-prono {
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-2);
+  text-align: center;
+}

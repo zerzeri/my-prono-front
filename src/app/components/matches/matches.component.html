@@ -39,7 +39,7 @@
         <span class="team-name">{{ match.equipe2 }}</span>
       </div>
 
-      <div class="pronostic-section" *ngIf="canMakePronostic(match)">
+      <div class="pronostic-section" *ngIf="canMakePronostic(match) && auth.isLoggedIn">
         <label [for]="'prono-' + match.id">Votre pronostic</label>
         <div class="pronostic-input">
           <input
@@ -53,12 +53,23 @@
             (click)="submitPronostic(match.id!)"
             class="btn btn-primary"
             [disabled]="!newPronostic[match.id!]">
-            Valider
+            {{ myPronostics[match.id!] ? 'Modifier' : 'Valider' }}
           </button>
         </div>
+        <p class="prono-hint" *ngIf="myPronostics[match.id!]">
+          Modifiable jusqu'au coup d'envoi.
+        </p>
       </div>
 
-      <div class="expired-message" *ngIf="!match.resultat && isMatchPast(match.dateMatch)">
+      <div class="pronostic-section login-invite" *ngIf="canMakePronostic(match) && !auth.isLoggedIn">
+        <a routerLink="/login">Connectez-vous</a> pour pronostiquer ce match.
+      </div>
+
+      <div class="my-prono" *ngIf="!canMakePronostic(match) && myPronostics[match.id!]">
+        🎯 Votre pronostic : <strong>{{ myPronostics[match.id!].pronostic }}</strong>
+      </div>
+
+      <div class="expired-message" *ngIf="!match.resultat && isMatchPast(match.dateMatch) && !myPronostics[match.id!]">
         ⏰ Temps écoulé pour les pronostics
       </div>
     </div>

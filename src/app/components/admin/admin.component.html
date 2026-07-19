@@ -24,6 +24,25 @@
   <div *ngIf="activeTab === 'matches'" class="tab-content">
     <div class="section card">
       <div class="section-header">
+        <h3>Coupe du Monde 2026</h3>
+        <button
+          class="btn btn-secondary"
+          (click)="syncWorldCup()"
+          [disabled]="syncing">
+          {{ syncing ? 'Synchronisation…' : '🌍 Synchroniser les matchs' }}
+        </button>
+      </div>
+      <p class="sync-hint">
+        Récupère les 104 matchs de la Coupe du Monde 2026 (équipes, calendrier, scores)
+        et met à jour les résultats. Peut être relancé à tout moment.
+      </p>
+      <div *ngIf="syncMessage" class="alert" [class.alert-success]="!syncError" [class.alert-danger]="syncError">
+        {{ syncMessage }}
+      </div>
+    </div>
+
+    <div class="section card">
+      <div class="section-header">
         <h3>Matchs</h3>
         <button
           class="btn btn-primary"

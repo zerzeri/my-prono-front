@@ -1,7 +1,8 @@
 // app.component.ts
 import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -17,13 +18,24 @@ import { CommonModule } from '@angular/common';
 
         <nav class="nav">
           <a routerLink="/matches" routerLinkActive="active" class="nav-link">Matchs</a>
-          <a *ngIf="isAdmin" routerLink="/admin" routerLinkActive="active" class="nav-link">Administration</a>
+          <a *ngIf="(auth.user$ | async)?.role === 'ADMIN'" routerLink="/admin" routerLinkActive="active" class="nav-link">Administration</a>
         </nav>
 
-        <button (click)="toggleAdmin()" class="admin-toggle" [class.on]="isAdmin">
-          <span class="dot"></span>
-          {{ isAdmin ? 'Admin' : 'Joueur' }}
-        </button>
+        <ng-container *ngIf="auth.user$ | async as user; else loggedOut">
+          <a routerLink="/account" routerLinkActive="active" class="admin-toggle on" title="Mon compte">
+            <span class="dot"></span>
+            {{ user.email }}
+          </a>
+          <button (click)="logout()" class="admin-toggle" title="Se déconnecter">
+            Déconnexion
+          </button>
+        </ng-container>
+        <ng-template #loggedOut>
+          <a routerLink="/login" class="admin-toggle">
+            <span class="dot"></span>
+            Connexion
+          </a>
+        </ng-template>
       </div>
     </header>
 
@@ -117,6 +129,11 @@ import { CommonModule } from '@angular/common';
       border-radius: 999px;
       padding: 0.45rem 0.9rem;
       cursor: pointer;
+      text-decoration: none;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
       transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }
 
@@ -171,10 +188,11 @@ import { CommonModule } from '@angular/common';
 })
 export class AppComponent {
   title = 'my-pronostic-frontend';
-  isAdmin = false;
 
-  toggleAdmin() {
-    this.isAdmin = !this.isAdmin;
-    // Dans une vraie application, vous géreriez l'authentification ici
+  constructor(public auth: AuthService, private router: Router) {}
+
+  logout() {
+    this.auth.logout();
+    this.router.navigate(['/matches']);
   }
 }
