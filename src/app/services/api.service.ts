@@ -35,6 +35,13 @@ export interface JoueurDTO {
   poste?: string;
 }
 
+export interface WorldCupSyncResult {
+  equipesCreees: number;
+  matchsCrees: number;
+  matchsMisAJour: number;
+  total: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -90,6 +97,10 @@ private readonly baseUrl = environment.apiUrl;
     return this.http.get<PronosticDTO[]>(`${this.baseUrl}/pronostics`);
   }
 
+  getMyPronostics(): Observable<PronosticDTO[]> {
+    return this.http.get<PronosticDTO[]>(`${this.baseUrl}/pronostics/mine`);
+  }
+
   getPronostic(id: number): Observable<PronosticDTO> {
     return this.http.get<PronosticDTO>(`${this.baseUrl}/pronostics/${id}`);
   }
@@ -113,6 +124,11 @@ private readonly baseUrl = environment.apiUrl;
 
   createIndividu(individu: IndividuDTO): Observable<number> {
     return this.http.post<number>(`${this.baseUrl}/individus`, individu);
+  }
+
+  // Synchronisation Coupe du Monde 2026 (admin)
+  syncWorldCup(): Observable<WorldCupSyncResult> {
+    return this.http.post<WorldCupSyncResult>(`${this.baseUrl}/admin/worldcup/sync`, {});
   }
 
   // Joueurs

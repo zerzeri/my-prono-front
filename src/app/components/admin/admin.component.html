@@ -1,43 +1,65 @@
 <!-- src/app/components/admin/admin.component.html -->
 <div class="admin-container">
-  <h2>Administration</h2>
-  
+  <div class="page-header">
+    <h2>Administration</h2>
+    <p class="subtitle">Gérez les équipes et les matchs du site.</p>
+  </div>
+
   <div class="admin-tabs">
-    <button 
-      class="tab-btn" 
+    <button
+      class="tab-btn"
       [class.active]="activeTab === 'matches'"
       (click)="setActiveTab('matches')">
-      Gestion des Matchs
+      Matchs
     </button>
-    <button 
-      class="tab-btn" 
+    <button
+      class="tab-btn"
       [class.active]="activeTab === 'equipes'"
       (click)="setActiveTab('equipes')">
-      Gestion des Équipes
+      Équipes
     </button>
   </div>
 
   <!-- Gestion des Matchs -->
   <div *ngIf="activeTab === 'matches'" class="tab-content">
-    <div class="section">
+    <div class="section card">
       <div class="section-header">
-        <h3>Gestion des matchs</h3>
-        <button 
-          class="btn btn-primary" 
+        <h3>Coupe du Monde 2026</h3>
+        <button
+          class="btn btn-secondary"
+          (click)="syncWorldCup()"
+          [disabled]="syncing">
+          {{ syncing ? 'Synchronisation…' : '🌍 Synchroniser les matchs' }}
+        </button>
+      </div>
+      <p class="sync-hint">
+        Récupère les 104 matchs de la Coupe du Monde 2026 (équipes, calendrier, scores)
+        et met à jour les résultats. Peut être relancé à tout moment.
+      </p>
+      <div *ngIf="syncMessage" class="alert" [class.alert-success]="!syncError" [class.alert-danger]="syncError">
+        {{ syncMessage }}
+      </div>
+    </div>
+
+    <div class="section card">
+      <div class="section-header">
+        <h3>Matchs</h3>
+        <button
+          class="btn btn-primary"
           (click)="showCreateMatchForm()"
           [disabled]="equipes.length < 2">
-          Créer un match
+          + Créer un match
         </button>
       </div>
 
-      <div *ngIf="equipes.length < 2" class="warning">
+      <div *ngIf="equipes.length < 2" class="alert alert-warning">
         ⚠️ Vous devez avoir au moins 2 équipes pour créer un match.
       </div>
 
       <!-- Formulaire de match (création/modification) -->
       <div *ngIf="showMatchForm" class="form-section">
         <h4>{{ editingMatch ? 'Modifier' : 'Créer' }} un match</h4>
-        <app-match-form 
+        <app-match-form
           [match]="editingMatch"
           [isEditing]="!!editingMatch"
           (submitMatch)="onMatchSubmit($event)"
@@ -46,83 +68,39 @@
       </div>
 
       <!-- Liste des matchs -->
-      <div class="matches-section">
-        <h4>Liste des matchs existants</h4>
-        <div *ngIf="matches.length === 0" class="no-data">
-          <p>Aucun match créé pour le moment.</p>
-        </div>
-        <div class="matches-list">
-          <div *ngFor="let match of matches" class="match-item" [class]="getMatchStatusClass(match)">
-            <div class="match-info">
-              <h5>{{ match.equipe1Name }} vs {{ match.equipe2Name }}</h5>
-              <div class="match-details">
-                <p class="match-date">📅 {{ formatDate(match.dateMatch) }}</p>
-                <p *ngIf="match.resultat" class="result">🏆 Résultat: {{ match.resultat }}</p>
-                <p class="status">{{ getMatchStatusText(match) }}</p>
-              </div>
-            </div>
-            
-            <div class="match-actions">
-              <button 
-                class="btn btn-secondary btn-sm"
-                (click)="editMatch(match)">
-                Modifier
-              </button>
-              <button 
-                class="btn btn-danger btn-sm"
-                (click)="deleteMatch(match.id!)">
-                Supprimer
-              </button>
-            </div>
-          </div>
-        </div>
+      <div *ngIf="matches.length === 0 && !showMatchForm" class="empty-state">
+        <span class="empty-icon">🏟️</span>
+        <p>Aucun match créé pour le moment.</p>
       </div>
-    </div>
-  </div>
 
-  <!-- Gestion des Équipes -->
-  <div *ngIf="activeTab === 'equipes'" class="tab-content">
-    <div class="section">
-      <h3>Créer une nouvelle équipe</h3>
-      <form (ngSubmit)="createEquipe()" class="form">
-        <div class="form-group">
-          <label for="equipeName">Nom de l'équipe *:</label>
-          <input 
-            type="text" 
-            id="equipeName"
-            [(ngModel)]="newEquipe.name" 
-            name="equipeName"
-            placeholder="Nom de l'équipe"
-            required>
-        </div>
-        
-        <button type="submit" class="btn btn-primary" [disabled]="!newEquipe.name.trim()">
-          Créer l'équipe
-        </button>
-      </form>
-    </div>
-
-    <div class="section">
-      <h3>Liste des équipes</h3>
-      <div *ngIf="equipes.length === 0" class="no-data">
-        <p>Aucune équipe créée pour le moment.</p>
-      </div>
-      <div class="equipes-grid">
-        <div *ngFor="let equipe of equipes" class="equipe-card">
-          <div class="equipe-info">
-            <h4>{{ equipe.name }}</h4>
-            <small>ID: {{ equipe.id }}</small>
-            <p *ngIf="!canDeleteEquipe(equipe.id!)" class="usage-info">
-              {{ getEquipeUsageWarning(equipe.id!) }}
+      <div class="matches-list">
+        <div *ngFor="let match of matches" class="match-item">
+          <div class="match-info">
+            <div class="match-title">
+              <h5>{{ match.equipe1 }} <span class="vs-sep">vs</span> {{ match.equipe2 }}</h5>
+              <span class="badge"
+                    [class.badge-finished]="match.resultat"
+                    [class.badge-expired]="!match.resultat && isMatchPast(match.dateMatch)"
+                    [class.badge-today]="!match.resultat && !isMatchPast(match.dateMatch) && isMatchToday(match.dateMatch)"
+                    [class.badge-upcoming]="!match.resultat && !isMatchPast(match.dateMatch) && !isMatchToday(match.dateMatch)">
+                {{ getMatchStatusText(match) }}
+              </span>
+            </div>
+            <p class="match-meta">
+              📅 {{ formatDate(match.dateMatch) }}
+              <span *ngIf="match.resultat" class="result-inline">· 🏆 {{ match.resultat }}</span>
             </p>
           </div>
-          
-          <div class="equipe-actions">
-            <button 
+
+          <div class="match-actions">
+            <button
+              class="btn btn-secondary btn-sm"
+              (click)="editMatch(match)">
+              Modifier
+            </button>
+            <button
               class="btn btn-danger btn-sm"
-              [disabled]="!canDeleteEquipe(equipe.id!)"
-              [title]="!canDeleteEquipe(equipe.id!) ? 'Cette équipe est utilisée dans des matchs' : 'Supprimer l\'équipe'"
-              (click)="deleteEquipe(equipe.id!)">
+              (click)="deleteMatch(match.id!)">
               Supprimer
             </button>
           </div>
@@ -131,9 +109,57 @@
     </div>
   </div>
 
+  <!-- Gestion des Équipes -->
+  <div *ngIf="activeTab === 'equipes'" class="tab-content">
+    <div class="section card">
+      <h3>Créer une équipe</h3>
+      <form (ngSubmit)="createEquipe()" class="equipe-form">
+        <div class="form-group">
+          <label for="equipeName">Nom de l'équipe</label>
+          <input
+            type="text"
+            id="equipeName"
+            [(ngModel)]="newEquipe.name"
+            name="equipeName"
+            placeholder="Ex : Paris SG"
+            required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" [disabled]="!newEquipe.name.trim()">
+          + Créer l'équipe
+        </button>
+      </form>
+    </div>
+
+    <div class="section card">
+      <h3>Équipes ({{ equipes.length }})</h3>
+      <div *ngIf="equipes.length === 0" class="empty-state">
+        <span class="empty-icon">👥</span>
+        <p>Aucune équipe créée pour le moment.</p>
+      </div>
+      <div class="equipes-grid">
+        <div *ngFor="let equipe of equipes" class="equipe-card">
+          <div class="equipe-info">
+            <h4>{{ equipe.name }}</h4>
+            <p *ngIf="!canDeleteEquipe(equipe.id!)" class="usage-info">
+              {{ getEquipeUsageWarning(equipe.id!) }}
+            </p>
+          </div>
+
+          <button
+            class="btn btn-danger btn-sm"
+            [disabled]="!canDeleteEquipe(equipe.id!)"
+            [title]="!canDeleteEquipe(equipe.id!) ? 'Cette équipe est utilisée dans des matchs' : 'Supprimer l\'équipe'"
+            (click)="deleteEquipe(equipe.id!)">
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Loading indicator -->
   <div *ngIf="loading" class="loading">
     <div class="spinner"></div>
-    <p>Chargement...</p>
   </div>
 </div>

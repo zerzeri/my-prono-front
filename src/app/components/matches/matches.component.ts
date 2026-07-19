@@ -1,27 +1,36 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { ApiService, MatchDTO, PronosticDTO } from '../../services/api.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-matches',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './matches.component.html',
   styleUrl: './matches.component.css'
 })
 export class MatchesComponent implements OnInit {
   matches: MatchDTO[] = [];
   filteredMatches: MatchDTO[] = [];
-  pronostics: PronosticDTO[] = [];
+  myPronostics: { [matchId: number]: PronosticDTO } = {};
   newPronostic: { [key: number]: string } = {};
   filterType: string = 'all';
 
-  constructor(private apiService: ApiService) {}
+  readonly filters = [
+    { value: 'all', label: 'Tous' },
+    { value: 'upcoming', label: 'À venir' },
+    { value: 'today', label: "Aujourd'hui" },
+    { value: 'finished', label: 'Terminés' }
+  ];
+
+  constructor(private apiService: ApiService, public auth: AuthService) {}
 
   ngOnInit() {
     this.loadMatches();
-    this.loadPronostics();
+    this.loadMyPronostics();
   }
 
   loadMatches() {
@@ -36,13 +45,23 @@ export class MatchesComponent implements OnInit {
     });
   }
 
-  loadPronostics() {
-    this.apiService.getAllPronostics().subscribe({
+  loadMyPronostics() {
+    if (!this.auth.isLoggedIn) {
+      this.myPronostics = {};
+      return;
+    }
+    this.apiService.getMyPronostics().subscribe({
       next: (pronostics) => {
-        this.pronostics = pronostics;
+        this.myPronostics = {};
+        for (const prono of pronostics) {
+          if (prono.match != null) {
+            this.myPronostics[prono.match] = prono;
+            this.newPronostic[prono.match] = prono.pronostic;
+          }
+        }
       },
       error: (error) => {
-        console.error('Erreur lors du chargement des pronostics:', error);
+        console.error('Erreur lors du chargement de mes pronostics:', error);
       }
     });
   }
@@ -79,21 +98,26 @@ export class MatchesComponent implements OnInit {
     const pronosticText = this.newPronostic[matchId];
     if (!pronosticText) return;
 
+    const existant = this.myPronostics[matchId];
     const pronostic: PronosticDTO = {
       pronostic: pronosticText,
       match: matchId
     };
 
-    this.apiService.createPronostic(pronostic).subscribe({
-      next: (id) => {
-        console.log('Pronostic créé avec l\'ID:', id);
-        this.newPronostic[matchId] = '';
-        this.loadPronostics();
-        alert('Pronostic enregistré avec succès !');
+    const requete = existant
+      ? this.apiService.updatePronostic(existant.id!, pronostic)
+      : this.apiService.createPronostic(pronostic);
+
+    requete.subscribe({
+      next: () => {
+        this.loadMyPronostics();
+        alert(existant ? 'Pronostic modifié !' : 'Pronostic enregistré !');
       },
       error: (error) => {
-        console.error('Erreur lors de la création du pronostic:', error);
-        alert('Erreur lors de l\'enregistrement du pronostic');
+        console.error('Erreur lors de l\'enregistrement du pronostic:', error);
+        alert(error.status === 400
+          ? 'Le match a déjà commencé, les pronostics sont fermés.'
+          : 'Erreur lors de l\'enregistrement du pronostic');
       }
     });
   }
