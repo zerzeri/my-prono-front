@@ -95,8 +95,14 @@ export class MatchesComponent implements OnInit {
   }
 
   submitPronostic(matchId: number) {
-    const pronosticText = this.newPronostic[matchId];
+    const pronosticText = (this.newPronostic[matchId] ?? '').trim();
     if (!pronosticText) return;
+
+    // Format score exigé pour que le pronostic compte au classement des ligues
+    if (!/^\d+\s*-\s*\d+$/.test(pronosticText)) {
+      alert('Format attendu : un score, par exemple 2-1');
+      return;
+    }
 
     const existant = this.myPronostics[matchId];
     const pronostic: PronosticDTO = {

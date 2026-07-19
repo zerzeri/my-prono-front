@@ -2,7 +2,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -25,8 +25,14 @@ import { AuthService } from '../../services/auth.service';
           </div>
           <div class="form-group">
             <label for="password">Mot de passe</label>
-            <input type="password" id="password" name="password" [(ngModel)]="password"
-                   placeholder="••••••••" autocomplete="current-password" required>
+            <div class="password-field">
+              <input [type]="showPassword ? 'text' : 'password'" id="password" name="password" [(ngModel)]="password"
+                     placeholder="••••••••" autocomplete="current-password" required>
+              <button type="button" class="toggle-eye" (click)="showPassword = !showPassword"
+                      [attr.aria-label]="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'">
+                {{ showPassword ? '🙈' : '👁️' }}
+              </button>
+            </div>
           </div>
           <button type="submit" class="btn btn-primary" [disabled]="loading || !email || !password">
             {{ loading ? 'Connexion…' : 'Se connecter' }}
@@ -46,15 +52,16 @@ export class LoginComponent {
   password = '';
   error = '';
   loading = false;
+  showPassword = false;
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(private auth: AuthService, private router: Router, private route: ActivatedRoute) {}
 
   submit() {
     if (!this.email || !this.password) return;
     this.loading = true;
     this.error = '';
     this.auth.login(this.email, this.password).subscribe({
-      next: () => this.router.navigate(['/matches']),
+      next: () => this.router.navigateByUrl(this.route.snapshot.queryParamMap.get('returnUrl') ?? '/matches'),
       error: (err) => {
         this.loading = false;
         this.error = err.status === 401 ? 'Email ou mot de passe incorrect.' : 'Erreur lors de la connexion.';
