@@ -8,99 +8,171 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <nav class="navbar">
-      <div class="nav-container">
-        <h1 class="nav-title">My Pronostic</h1>
-        <ul class="nav-menu">
-          <li class="nav-item">
-            <a routerLink="/matches" routerLinkActive="active" class="nav-link">Matchs</a>
-          </li>
-          <li class="nav-item" *ngIf="isAdmin">
-            <a routerLink="/admin" routerLinkActive="active" class="nav-link">Administration</a>
-          </li>
-          <li class="nav-item">
-            <button (click)="toggleAdmin()" class="admin-toggle">
-              {{ isAdmin ? 'Mode User' : 'Mode Admin' }}
-            </button>
-          </li>
-        </ul>
+    <header class="header">
+      <div class="header-inner">
+        <a routerLink="/matches" class="brand">
+          <span class="brand-icon">⚽</span>
+          <span class="brand-name">My<em>Prono</em></span>
+        </a>
+
+        <nav class="nav">
+          <a routerLink="/matches" routerLinkActive="active" class="nav-link">Matchs</a>
+          <a *ngIf="isAdmin" routerLink="/admin" routerLinkActive="active" class="nav-link">Administration</a>
+        </nav>
+
+        <button (click)="toggleAdmin()" class="admin-toggle" [class.on]="isAdmin">
+          <span class="dot"></span>
+          {{ isAdmin ? 'Admin' : 'Joueur' }}
+        </button>
       </div>
-    </nav>
-    
+    </header>
+
     <main class="main-content">
       <router-outlet></router-outlet>
     </main>
+
+    <footer class="footer">
+      <p>My Prono — pronostics entre amis</p>
+    </footer>
   `,
   styles: [`
-    .navbar {
-      background-color: #2c3e50;
-      color: white;
-      padding: 1rem 0;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--navy);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
-    
-    .nav-container {
-      max-width: 1200px;
+
+    .header-inner {
+      max-width: 1100px;
       margin: 0 auto;
+      padding: 0 1.25rem;
+      height: 64px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 0 2rem;
-    }
-    
-    .nav-title {
-      margin: 0;
-      font-size: 1.5rem;
-    }
-    
-    .nav-menu {
-      list-style: none;
-      display: flex;
       gap: 2rem;
-      margin: 0;
-      padding: 0;
+    }
+
+    .brand {
+      display: flex;
       align-items: center;
-    }
-    
-    .nav-link {
-      color: white;
+      gap: 0.6rem;
       text-decoration: none;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      transition: background-color 0.3s;
     }
-    
-    .nav-link:hover,
-    .nav-link.active {
-      background-color: #34495e;
+
+    .brand-icon {
+      font-size: 1.5rem;
+      line-height: 1;
     }
-    
-    .admin-toggle {
-      background-color: #3498db;
-      color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      cursor: pointer;
+
+    .brand-name {
+      font-size: 1.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    .brand-name em {
+      font-style: normal;
+      color: #34d399;
+    }
+
+    .nav {
+      display: flex;
+      gap: 0.25rem;
+      flex: 1;
+    }
+
+    .nav-link {
+      color: rgba(255, 255, 255, 0.7);
+      text-decoration: none;
       font-size: 0.9rem;
-      transition: background-color 0.3s;
+      font-weight: 600;
+      padding: 0.5rem 0.9rem;
+      border-radius: 8px;
+      transition: color 0.15s ease, background-color 0.15s ease;
     }
-    
+
+    .nav-link:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .nav-link.active {
+      color: #fff;
+      background: rgba(52, 211, 153, 0.15);
+    }
+
+    .admin-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.75);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      padding: 0.45rem 0.9rem;
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .admin-toggle .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.35);
+      transition: background-color 0.15s ease;
+    }
+
     .admin-toggle:hover {
-      background-color: #2980b9;
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.3);
     }
-    
+
+    .admin-toggle.on {
+      color: #34d399;
+      border-color: rgba(52, 211, 153, 0.4);
+      background: rgba(52, 211, 153, 0.1);
+    }
+
+    .admin-toggle.on .dot {
+      background: #34d399;
+      box-shadow: 0 0 6px rgba(52, 211, 153, 0.8);
+    }
+
     .main-content {
-      max-width: 1200px;
+      max-width: 1100px;
       margin: 2rem auto;
-      padding: 0 2rem;
+      padding: 0 1.25rem;
+      min-height: calc(100vh - 64px - 8rem);
+    }
+
+    .footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 640px) {
+      .header-inner {
+        gap: 1rem;
+      }
+
+      .brand-name {
+        display: none;
+      }
     }
   `]
 })
 export class AppComponent {
   title = 'my-pronostic-frontend';
   isAdmin = false;
-  
+
   toggleAdmin() {
     this.isAdmin = !this.isAdmin;
     // Dans une vraie application, vous géreriez l'authentification ici

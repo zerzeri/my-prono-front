@@ -17,6 +17,13 @@ export class MatchesComponent implements OnInit {
   newPronostic: { [key: number]: string } = {};
   filterType: string = 'all';
 
+  readonly filters = [
+    { value: 'all', label: 'Tous' },
+    { value: 'upcoming', label: 'À venir' },
+    { value: 'today', label: "Aujourd'hui" },
+    { value: 'finished', label: 'Terminés' }
+  ];
+
   constructor(private apiService: ApiService) {}
 
   ngOnInit() {

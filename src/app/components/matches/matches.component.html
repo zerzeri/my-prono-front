@@ -1,83 +1,71 @@
 <div class="matches-container">
-  <h2>Liste des Matchs</h2>
-  
-  <div class="filter-section">
-    <div class="filter-group">
-      <label for="filter">Filtrer par:</label>
-      <select id="filter" [(ngModel)]="filterType" (change)="applyFilter()">
-        <option value="all">Tous les matchs</option>
-        <option value="finished">Matchs terminés</option>
-        <option value="upcoming">Matchs à venir</option>
-        <option value="today">Matchs d'aujourd'hui</option>
-      </select>
-    </div>
+  <div class="page-header">
+    <h2>Matchs</h2>
+    <p class="subtitle">Consultez les matchs et déposez vos pronostics.</p>
+  </div>
+
+  <div class="filter-bar">
+    <button
+      *ngFor="let f of filters"
+      type="button"
+      class="filter-pill"
+      [class.active]="filterType === f.value"
+      (click)="filterType = f.value; applyFilter()">
+      {{ f.label }}
+    </button>
   </div>
 
   <div class="matches-grid">
-    <div *ngFor="let match of filteredMatches" 
-         class="match-card" 
-         [class.finished]="match.resultat || isMatchPast(match.dateMatch)"
-         [class.today]="isMatchToday(match.dateMatch)"
-         [class.soon]="isMatchSoon(match.dateMatch)">
-      
+    <div *ngFor="let match of filteredMatches"
+         class="match-card card"
+         [class.finished]="match.resultat || isMatchPast(match.dateMatch)">
+
       <div class="match-header">
-        <h3>{{ match.equipe1 }} vs {{ match.equipe2 }}</h3>
-        <div class="match-info-header">
-          <span class="match-date">{{ formatDateShort(match.dateMatch) }}</span>
-          <span class="match-status" 
-                [class.finished]="match.resultat || isMatchPast(match.dateMatch)"
-                [class.today]="isMatchToday(match.dateMatch)"
-                [class.soon]="isMatchSoon(match.dateMatch)">
-            {{ getMatchStatus(match) }}
-          </span>
+        <span class="match-date">{{ formatDate(match.dateMatch) }}</span>
+        <span class="badge"
+              [class.badge-finished]="match.resultat"
+              [class.badge-expired]="!match.resultat && isMatchPast(match.dateMatch)"
+              [class.badge-today]="!match.resultat && !isMatchPast(match.dateMatch) && isMatchToday(match.dateMatch)"
+              [class.badge-soon]="!match.resultat && !isMatchPast(match.dateMatch) && !isMatchToday(match.dateMatch) && isMatchSoon(match.dateMatch)"
+              [class.badge-upcoming]="!match.resultat && !isMatchPast(match.dateMatch) && !isMatchToday(match.dateMatch) && !isMatchSoon(match.dateMatch)">
+          {{ getMatchStatus(match) }}
+        </span>
+      </div>
+
+      <div class="teams">
+        <span class="team-name">{{ match.equipe1 }}</span>
+        <span class="vs" *ngIf="!match.resultat">VS</span>
+        <span class="score" *ngIf="match.resultat">{{ match.resultat }}</span>
+        <span class="team-name">{{ match.equipe2 }}</span>
+      </div>
+
+      <div class="pronostic-section" *ngIf="canMakePronostic(match)">
+        <label [for]="'prono-' + match.id">Votre pronostic</label>
+        <div class="pronostic-input">
+          <input
+            type="text"
+            [id]="'prono-' + match.id"
+            [(ngModel)]="newPronostic[match.id!]"
+            placeholder="Ex : 2-1"
+            (keyup.enter)="submitPronostic(match.id!)">
+          <button
+            type="button"
+            (click)="submitPronostic(match.id!)"
+            class="btn btn-primary"
+            [disabled]="!newPronostic[match.id!]">
+            Valider
+          </button>
         </div>
       </div>
-      
-      <div class="match-content">
-        <div class="teams">
-          <div class="team">
-            <span class="team-name">{{ match.equipe1 }}</span>
-          </div>
-          <div class="vs">VS</div>
-          <div class="team">
-            <span class="team-name">{{ match.equipe2 }}</span>
-          </div>
-        </div>
-        
-        <div class="match-datetime">
-          <p class="full-date">{{ formatDate(match.dateMatch) }}</p>
-        </div>
-        
-        <div class="result" *ngIf="match.resultat">
-          <h4>Résultat:</h4>
-          <p class="score">{{ match.resultat }}</p>
-        </div>
-        
-        <div class="pronostic-section" *ngIf="canMakePronostic(match)">
-          <h4>Votre pronostic:</h4>
-          <div class="pronostic-input">
-            <input 
-              type="text" 
-              [(ngModel)]="newPronostic[match.id!]" 
-              placeholder="Ex: 2-1, Victoire équipe1..."
-              class="pronostic-field">
-            <button 
-              (click)="submitPronostic(match.id!)" 
-              class="submit-btn"
-              [disabled]="!newPronostic[match.id!]">
-              Valider
-            </button>
-          </div>
-        </div>
 
-        <div class="expired-message" *ngIf="!match.resultat && isMatchPast(match.dateMatch)">
-          <p>⏰ Temps écoulé pour les pronostics</p>
-        </div>
+      <div class="expired-message" *ngIf="!match.resultat && isMatchPast(match.dateMatch)">
+        ⏰ Temps écoulé pour les pronostics
       </div>
     </div>
   </div>
 
-  <div *ngIf="filteredMatches.length === 0" class="no-matches">
+  <div *ngIf="filteredMatches.length === 0" class="empty-state">
+    <span class="empty-icon">📭</span>
     <p>Aucun match trouvé pour ce filtre.</p>
   </div>
 </div>
