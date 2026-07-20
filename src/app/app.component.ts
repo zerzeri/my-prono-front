@@ -1,13 +1,14 @@
 // app.component.ts
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './services/auth.service';
+import { ToastComponent } from './components/toast/toast.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, ToastComponent],
   template: `
     <header class="header">
       <div class="header-inner">
@@ -22,15 +23,18 @@ import { AuthService } from './services/auth.service';
           <a *ngIf="(auth.user$ | async)?.role === 'ADMIN'" routerLink="/admin" routerLinkActive="active" class="nav-link">Administration</a>
         </nav>
 
-        <ng-container *ngIf="auth.user$ | async as user; else loggedOut">
-          <a routerLink="/account" routerLinkActive="active" class="admin-toggle on" title="Mon compte">
+        <div class="user-menu" *ngIf="auth.user$ | async as user; else loggedOut">
+          <button class="admin-toggle on" [class.open]="menuOpen" (click)="toggleMenu($event)" title="Menu">
             <span class="dot"></span>
-            {{ user.email }}
-          </a>
-          <button (click)="logout()" class="admin-toggle" title="Se déconnecter">
-            Déconnexion
+            <span class="user-name">{{ user.username || user.email }}</span>
+            <span class="caret">▾</span>
           </button>
-        </ng-container>
+          <div class="dropdown" *ngIf="menuOpen">
+            <a routerLink="/account" class="dropdown-item">👤 Profil</a>
+            <a routerLink="/regles" class="dropdown-item">📖 Règles du jeu</a>
+            <button type="button" class="dropdown-item danger" (click)="logout()">🚪 Déconnexion</button>
+          </div>
+        </div>
         <ng-template #loggedOut>
           <a routerLink="/login" class="admin-toggle">
             <span class="dot"></span>
@@ -47,6 +51,8 @@ import { AuthService } from './services/auth.service';
     <footer class="footer">
       <p>My Prono — pronostics entre amis</p>
     </footer>
+
+    <app-toast></app-toast>
   `,
   styles: [`
     .header {
@@ -117,6 +123,10 @@ import { AuthService } from './services/auth.service';
       background: rgba(52, 211, 153, 0.15);
     }
 
+    .user-menu {
+      position: relative;
+    }
+
     .admin-toggle {
       display: inline-flex;
       align-items: center;
@@ -132,10 +142,19 @@ import { AuthService } from './services/auth.service';
       cursor: pointer;
       text-decoration: none;
       max-width: 220px;
-      overflow: hidden;
-      text-overflow: ellipsis;
       white-space: nowrap;
       transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .user-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 130px;
+    }
+
+    .caret {
+      font-size: 0.7rem;
+      opacity: 0.8;
     }
 
     .admin-toggle .dot {
@@ -144,6 +163,7 @@ import { AuthService } from './services/auth.service';
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.35);
       transition: background-color 0.15s ease;
+      flex-shrink: 0;
     }
 
     .admin-toggle:hover {
@@ -160,6 +180,59 @@ import { AuthService } from './services/auth.service';
     .admin-toggle.on .dot {
       background: #34d399;
       box-shadow: 0 0 6px rgba(52, 211, 153, 0.8);
+    }
+
+    .dropdown {
+      position: absolute;
+      top: calc(100% + 0.5rem);
+      right: 0;
+      min-width: 200px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      padding: 0.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      z-index: 20;
+      animation: dropdown-in 0.15s ease;
+    }
+
+    @keyframes dropdown-in {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-align: left;
+      color: var(--text);
+      background: none;
+      border: none;
+      border-radius: 8px;
+      padding: 0.6rem 0.75rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.12s ease;
+    }
+
+    .dropdown-item:hover {
+      background: var(--surface-2);
+      color: var(--text);
+    }
+
+    .dropdown-item.danger {
+      color: var(--danger);
+    }
+
+    .dropdown-item.danger:hover {
+      background: var(--danger-soft);
     }
 
     .main-content {
@@ -208,10 +281,14 @@ import { AuthService } from './services/auth.service';
       }
 
       .admin-toggle {
-        max-width: 118px;
+        max-width: 150px;
         font-size: 0.72rem;
         padding: 0.35rem 0.6rem;
         gap: 0.35rem;
+      }
+
+      .user-name {
+        max-width: 80px;
       }
 
       .main-content {
@@ -222,8 +299,20 @@ import { AuthService } from './services/auth.service';
 })
 export class AppComponent {
   title = 'my-pronostic-frontend';
+  menuOpen = false;
 
   constructor(public auth: AuthService, private router: Router) {}
+
+  toggleMenu(event: Event) {
+    event.stopPropagation();
+    this.menuOpen = !this.menuOpen;
+  }
+
+  // Ferme le menu sur tout clic ailleurs (y compris sur un item, ce qui laisse la navigation se faire)
+  @HostListener('document:click')
+  closeMenu() {
+    this.menuOpen = false;
+  }
 
   logout() {
     this.auth.logout();

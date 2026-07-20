@@ -39,6 +39,10 @@ export const routes: Routes = [
     loadComponent: () => import('./components/account/account.component').then(m => m.AccountComponent)
   },
   {
+    path: 'regles',
+    loadComponent: () => import('./components/regles/regles.component').then(m => m.ReglesComponent)
+  },
+  {
     path: 'ligues',
     canActivate: [authGuard],
     loadComponent: () => import('./components/ligues/ligues.component').then(m => m.LiguesComponent)

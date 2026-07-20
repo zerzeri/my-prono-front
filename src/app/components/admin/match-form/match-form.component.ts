@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatchDTO, EquipeDTO } from '../../../models';
 import { EquipeService } from '../../../services/equipe.service';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-match-form',
@@ -26,7 +27,7 @@ export class MatchFormComponent implements OnInit {
     resultat: ''
   };
 
-  constructor(private equipeService: EquipeService) {}
+  constructor(private equipeService: EquipeService, private toast: ToastService) {}
 
   ngOnInit() {
     this.loadEquipes();
@@ -56,18 +57,13 @@ export class MatchFormComponent implements OnInit {
   }
 
   onSubmit() {
-      console.log('=== DEBUG FORM SUBMIT ===');
-      console.log('Is editing:', this.isEditing);
-      console.log('Original match:', this.match);
-      console.log('Form data:', this.formData);
-
-      if (!this.isFormValid()) {
-      alert('Veuillez remplir tous les champs obligatoires');
+    if (!this.isFormValid()) {
+      this.toast.error('Veuillez remplir tous les champs obligatoires.');
       return;
     }
 
     if (this.formData.equipe1Id === this.formData.equipe2Id) {
-      alert('Une équipe ne peut pas jouer contre elle-même');
+      this.toast.error('Une équipe ne peut pas jouer contre elle-même.');
       return;
     }
 
@@ -78,10 +74,8 @@ export class MatchFormComponent implements OnInit {
 
     if (this.isEditing && this.match?.id) {
       matchToSubmit.id = this.match.id;
-      console.log('Match à modifier avec ID:', matchToSubmit.id);
     }
 
-    console.log('Match final envoyé:', matchToSubmit);
     this.submitMatch.emit(matchToSubmit);
   }
 

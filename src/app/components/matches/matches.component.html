@@ -40,19 +40,28 @@
       </div>
 
       <div class="pronostic-section" *ngIf="canMakePronostic(match) && auth.isLoggedIn">
-        <label [for]="'prono-' + match.id">Votre pronostic</label>
+        <label>Votre pronostic</label>
         <div class="pronostic-input">
-          <input
-            type="text"
-            [id]="'prono-' + match.id"
-            [(ngModel)]="newPronostic[match.id!]"
-            placeholder="Ex : 2-1"
-            (keyup.enter)="submitPronostic(match.id!)">
+          <div class="score-fields">
+            <input
+              type="number" min="0" inputmode="numeric"
+              class="score-box"
+              [attr.aria-label]="'Buts ' + match.equipe1"
+              [(ngModel)]="scores[match.id!].a"
+              (keyup.enter)="submitPronostic(match.id!)">
+            <span class="score-sep">–</span>
+            <input
+              type="number" min="0" inputmode="numeric"
+              class="score-box"
+              [attr.aria-label]="'Buts ' + match.equipe2"
+              [(ngModel)]="scores[match.id!].b"
+              (keyup.enter)="submitPronostic(match.id!)">
+          </div>
           <button
             type="button"
             (click)="submitPronostic(match.id!)"
             class="btn btn-primary"
-            [disabled]="!newPronostic[match.id!]">
+            [disabled]="!bothScoresFilled(match.id!)">
             {{ myPronostics[match.id!] ? 'Modifier' : 'Valider' }}
           </button>
         </div>

@@ -21,7 +21,13 @@ import { AuthService } from '../../services/auth.service';
           <div class="form-group">
             <label for="email">Email</label>
             <input type="email" id="email" name="email" [(ngModel)]="email"
-                   placeholder="votre@email.fr" autocomplete="username" required>
+                   placeholder="votre@email.fr" autocomplete="email" required>
+          </div>
+          <div class="form-group">
+            <label for="username">Nom d'utilisateur</label>
+            <input type="text" id="username" name="username" [(ngModel)]="username"
+                   placeholder="Ex : nabil06" autocomplete="username" required>
+            <p class="field-hint">3 à 20 caractères : lettres, chiffres, . _ -</p>
           </div>
           <div class="form-group">
             <label for="password">Mot de passe (6 caractères min.)</label>
@@ -46,7 +52,7 @@ import { AuthService } from '../../services/auth.service';
             </div>
           </div>
           <button type="submit" class="btn btn-primary"
-                  [disabled]="loading || !email || password.length < 6 || password !== confirm">
+                  [disabled]="loading || !email || !username || password.length < 6 || password !== confirm">
             {{ loading ? 'Création…' : 'Créer mon compte' }}
           </button>
         </form>
@@ -65,6 +71,7 @@ import { AuthService } from '../../services/auth.service';
 })
 export class RegisterComponent {
   email = '';
+  username = '';
   password = '';
   confirm = '';
   error = '';
@@ -75,17 +82,19 @@ export class RegisterComponent {
   constructor(private auth: AuthService, private router: Router) {}
 
   submit() {
-    if (!this.email || this.password.length < 6 || this.password !== this.confirm) return;
+    if (!this.email || !this.username || this.password.length < 6 || this.password !== this.confirm) return;
     this.loading = true;
     this.error = '';
-    this.auth.register(this.email, this.password).subscribe({
+    this.auth.register(this.email, this.username, this.password).subscribe({
       next: () => this.router.navigate(['/matches']),
       error: (err) => {
         this.loading = false;
         if (err.status === 409) {
-          this.error = 'Un compte existe déjà avec cet email.';
+          this.error = err.error?.detail?.includes('utilisateur')
+            ? 'Ce nom d\'utilisateur est déjà pris.'
+            : 'Un compte existe déjà avec cet email.';
         } else if (err.status === 400) {
-          this.error = 'Email invalide ou mot de passe trop court (6 caractères minimum).';
+          this.error = 'Champs invalides : vérifiez l\'email, le nom d\'utilisateur (3-20 caractères) et le mot de passe (6 min).';
         } else {
           this.error = 'Erreur lors de la création du compte.';
         }
