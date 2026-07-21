@@ -7,6 +7,7 @@ import { MatchService } from '../../services/match.service';
 import { EquipeService } from '../../services/equipe.service';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
+import { FavorisService } from '../../services/favoris.service';
 import { MatchFormComponent } from './match-form/match-form.component';
 
 @Component({
@@ -28,6 +29,9 @@ export class AdminComponent implements OnInit {
   syncMessage = '';
   syncError = false;
 
+  favorisEditable = true;
+  togglingFavoris = false;
+
   newEquipe: EquipeDTO = {
     name: ''
   };
@@ -36,12 +40,34 @@ export class AdminComponent implements OnInit {
     private matchService: MatchService,
     private equipeService: EquipeService,
     private apiService: ApiService,
-    private toast: ToastService
+    private toast: ToastService,
+    private favorisService: FavorisService
   ) {}
 
   ngOnInit() {
     this.loadMatches();
     this.loadEquipes();
+    this.favorisService.adminGetEditable().subscribe({
+      next: (res) => this.favorisEditable = res.editable,
+      error: () => {}
+    });
+  }
+
+  setFavorisEditable(editable: boolean) {
+    this.togglingFavoris = true;
+    this.favorisService.adminSetEditable(editable).subscribe({
+      next: (res) => {
+        this.favorisEditable = res.editable;
+        this.togglingFavoris = false;
+        this.toast.success(res.editable
+          ? 'Modification des favoris activée.'
+          : 'Modification des favoris désactivée.');
+      },
+      error: () => {
+        this.togglingFavoris = false;
+        this.toast.error('Erreur lors du changement de réglage.');
+      }
+    });
   }
 
   setActiveTab(tab: string) {

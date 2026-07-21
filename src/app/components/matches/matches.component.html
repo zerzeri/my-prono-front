@@ -4,6 +4,8 @@
     <p class="subtitle">Consultez les matchs et déposez vos pronostics.</p>
   </div>
 
+  <app-favoris *ngIf="auth.isLoggedIn"></app-favoris>
+
   <div class="filter-bar">
     <button
       *ngFor="let f of filters"

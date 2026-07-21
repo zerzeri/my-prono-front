@@ -39,6 +39,20 @@
       <div *ngIf="syncMessage" class="alert" [class.alert-success]="!syncError" [class.alert-danger]="syncError">
         {{ syncMessage }}
       </div>
+
+      <div class="favoris-toggle">
+        <div class="favoris-toggle-text">
+          <strong>Favoris des joueurs</strong>
+          <p class="sync-hint">
+            Autoriser les utilisateurs à choisir/modifier leur champion, meilleur buteur et meilleur passeur.
+          </p>
+        </div>
+        <label class="switch" title="Activer/désactiver la modification des favoris">
+          <input type="checkbox" [ngModel]="favorisEditable"
+                 (ngModelChange)="setFavorisEditable($event)" [disabled]="togglingFavoris">
+          <span class="slider"></span>
+        </label>
+      </div>
     </div>
 
     <div class="section card">

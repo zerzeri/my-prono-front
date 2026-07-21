@@ -5,11 +5,12 @@ import { RouterModule } from '@angular/router';
 import { ApiService, MatchDTO, PronosticDTO } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
+import { FavorisComponent } from '../favoris/favoris.component';
 
 @Component({
   selector: 'app-matches',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, FavorisComponent],
   templateUrl: './matches.component.html',
   styleUrl: './matches.component.css'
 })
