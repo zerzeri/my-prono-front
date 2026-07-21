@@ -113,11 +113,41 @@
 .pronostic-input {
   display: flex;
   gap: 0.5rem;
+  align-items: center;
 }
 
-.pronostic-input input {
+.score-fields {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   flex: 1;
+}
+
+.score-box {
+  width: 100%;
   min-width: 0;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.05rem;
+  padding: 0.5rem 0.4rem;
+  -moz-appearance: textfield;
+}
+
+/* Masque les flèches des input number */
+.score-box::-webkit-outer-spin-button,
+.score-box::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.score-sep {
+  color: var(--muted);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.pronostic-input .btn {
+  flex-shrink: 0;
 }
 
 .expired-message {

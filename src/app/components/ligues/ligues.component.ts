@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ClassementEntry, LigueDTO, LigueService } from '../../services/ligue.service';
 import { AuthService } from '../../services/auth.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-ligues',
@@ -335,7 +336,11 @@ export class LiguesComponent implements OnInit {
   loadingClassement = false;
   copiedId: number | null = null;
 
-  constructor(private ligueService: LigueService, public auth: AuthService) {}
+  constructor(
+    private ligueService: LigueService,
+    public auth: AuthService,
+    private toast: ToastService
+  ) {}
 
   ngOnInit() {
     this.load();
@@ -386,11 +391,12 @@ export class LiguesComponent implements OnInit {
         this.newName = '';
         this.creating = false;
         this.load(ligue.id);
+        this.toast.success(`Ligue « ${ligue.name} » créée !`);
       },
       error: (error) => {
         console.error('Erreur lors de la création de la ligue:', error);
         this.creating = false;
-        alert('Erreur lors de la création de la ligue.');
+        this.toast.error('Erreur lors de la création de la ligue.');
       }
     });
   }
@@ -408,6 +414,7 @@ export class LiguesComponent implements OnInit {
         this.joinInput = '';
         this.joiningInput = false;
         this.load(ligue.id);
+        this.toast.success(`Vous avez rejoint « ${ligue.name} » !`);
       },
       error: (err) => {
         this.joiningInput = false;

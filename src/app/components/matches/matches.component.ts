@@ -4,11 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ApiService, MatchDTO, PronosticDTO } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
+import { ToastService } from '../../services/toast.service';
+import { FavorisComponent } from '../favoris/favoris.component';
 
 @Component({
   selector: 'app-matches',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, FavorisComponent],
   templateUrl: './matches.component.html',
   styleUrl: './matches.component.css'
 })
@@ -16,7 +18,8 @@ export class MatchesComponent implements OnInit {
   matches: MatchDTO[] = [];
   filteredMatches: MatchDTO[] = [];
   myPronostics: { [matchId: number]: PronosticDTO } = {};
-  newPronostic: { [key: number]: string } = {};
+  // Saisie du score par match : deux cases (buts équipe 1 / équipe 2)
+  scores: { [matchId: number]: { a: string; b: string } } = {};
   filterType: string = 'all';
 
   readonly filters = [
@@ -26,7 +29,11 @@ export class MatchesComponent implements OnInit {
     { value: 'finished', label: 'Terminés' }
   ];
 
-  constructor(private apiService: ApiService, public auth: AuthService) {}
+  constructor(
+    private apiService: ApiService,
+    public auth: AuthService,
+    private toast: ToastService
+  ) {}
 
   ngOnInit() {
     this.loadMatches();
@@ -37,6 +44,11 @@ export class MatchesComponent implements OnInit {
     this.apiService.getAllMatches().subscribe({
       next: (matches) => {
         this.matches = matches;
+        for (const match of matches) {
+          if (match.id != null && !this.scores[match.id]) {
+            this.scores[match.id] = { a: '', b: '' };
+          }
+        }
         this.applyFilter();
       },
       error: (error) => {
@@ -56,7 +68,8 @@ export class MatchesComponent implements OnInit {
         for (const prono of pronostics) {
           if (prono.match != null) {
             this.myPronostics[prono.match] = prono;
-            this.newPronostic[prono.match] = prono.pronostic;
+            const parsed = this.parseScore(prono.pronostic);
+            this.scores[prono.match] = parsed ?? { a: '', b: '' };
           }
         }
       },
@@ -70,45 +83,46 @@ export class MatchesComponent implements OnInit {
     const now = new Date();
     switch (this.filterType) {
       case 'finished':
-        this.filteredMatches = this.matches.filter(match => 
+        this.filteredMatches = this.matches.filter(match =>
           match.resultat || new Date(match.dateMatch) < now
         );
         break;
       case 'upcoming':
-        this.filteredMatches = this.matches.filter(match => 
+        this.filteredMatches = this.matches.filter(match =>
           !match.resultat && new Date(match.dateMatch) >= now
         );
         break;
       case 'today':
-        this.filteredMatches = this.matches.filter(match => 
+        this.filteredMatches = this.matches.filter(match =>
           this.isMatchToday(match.dateMatch)
         );
         break;
       default:
         this.filteredMatches = [...this.matches];
     }
-    
-    // Trier par date
-    this.filteredMatches.sort((a, b) => 
+
+    this.filteredMatches.sort((a, b) =>
       new Date(a.dateMatch).getTime() - new Date(b.dateMatch).getTime()
     );
   }
 
   submitPronostic(matchId: number) {
-    const pronosticText = (this.newPronostic[matchId] ?? '').trim();
-    if (!pronosticText) return;
-
-    // Format score exigé pour que le pronostic compte au classement des ligues
-    if (!/^\d+\s*-\s*\d+$/.test(pronosticText)) {
-      alert('Format attendu : un score, par exemple 2-1');
+    const s = this.scores[matchId];
+    const a = (s?.a ?? '').toString().trim();
+    const b = (s?.b ?? '').toString().trim();
+    if (a === '' || b === '') {
+      this.toast.error('Indiquez le nombre de buts des deux équipes.');
+      return;
+    }
+    const na = Number(a);
+    const nb = Number(b);
+    if (!Number.isInteger(na) || !Number.isInteger(nb) || na < 0 || nb < 0) {
+      this.toast.error('Score invalide.');
       return;
     }
 
     const existant = this.myPronostics[matchId];
-    const pronostic: PronosticDTO = {
-      pronostic: pronosticText,
-      match: matchId
-    };
+    const pronostic: PronosticDTO = { pronostic: `${na}-${nb}`, match: matchId };
 
     const requete = existant
       ? this.apiService.updatePronostic(existant.id!, pronostic)
@@ -117,15 +131,30 @@ export class MatchesComponent implements OnInit {
     requete.subscribe({
       next: () => {
         this.loadMyPronostics();
-        alert(existant ? 'Pronostic modifié !' : 'Pronostic enregistré !');
+        this.toast.success(existant ? 'Pronostic modifié !' : 'Pronostic enregistré !');
       },
       error: (error) => {
         console.error('Erreur lors de l\'enregistrement du pronostic:', error);
-        alert(error.status === 400
+        this.toast.error(error.status === 400
           ? 'Le match a déjà commencé, les pronostics sont fermés.'
-          : 'Erreur lors de l\'enregistrement du pronostic');
+          : 'Erreur lors de l\'enregistrement du pronostic.');
       }
     });
+  }
+
+  // Les deux cases sont renseignées (0 compris — d'où le test explicite du vide, pas de la « vérité »)
+  bothScoresFilled(matchId: number): boolean {
+    const s = this.scores[matchId];
+    return !!s && this.isFilled(s.a) && this.isFilled(s.b);
+  }
+
+  private isFilled(value: unknown): boolean {
+    return value !== null && value !== undefined && value !== '';
+  }
+
+  private parseScore(text: string): { a: string; b: string } | null {
+    const m = (text ?? '').trim().match(/^(\d+)\s*[-:]\s*(\d+)$/);
+    return m ? { a: m[1], b: m[2] } : null;
   }
 
   // Méthodes utilitaires pour les dates
@@ -135,16 +164,6 @@ export class MatchesComponent implements OnInit {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }
-
-  formatDateShort(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
       hour: '2-digit',
       minute: '2-digit'
     });

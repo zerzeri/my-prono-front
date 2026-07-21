@@ -19,9 +19,9 @@ import { AuthService } from '../../services/auth.service';
 
         <form (ngSubmit)="submit()">
           <div class="form-group">
-            <label for="email">Email</label>
-            <input type="text" id="email" name="email" [(ngModel)]="email"
-                   placeholder="votre@email.fr" autocomplete="username" required>
+            <label for="identifier">Email ou nom d'utilisateur</label>
+            <input type="text" id="identifier" name="identifier" [(ngModel)]="identifier"
+                   placeholder="votre@email.fr ou pseudo" autocomplete="username" required>
           </div>
           <div class="form-group">
             <label for="password">Mot de passe</label>
@@ -34,7 +34,7 @@ import { AuthService } from '../../services/auth.service';
               </button>
             </div>
           </div>
-          <button type="submit" class="btn btn-primary" [disabled]="loading || !email || !password">
+          <button type="submit" class="btn btn-primary" [disabled]="loading || !identifier || !password">
             {{ loading ? 'Connexion…' : 'Se connecter' }}
           </button>
         </form>
@@ -48,7 +48,7 @@ import { AuthService } from '../../services/auth.service';
   `
 })
 export class LoginComponent {
-  email = '';
+  identifier = '';
   password = '';
   error = '';
   loading = false;
@@ -57,14 +57,14 @@ export class LoginComponent {
   constructor(private auth: AuthService, private router: Router, private route: ActivatedRoute) {}
 
   submit() {
-    if (!this.email || !this.password) return;
+    if (!this.identifier || !this.password) return;
     this.loading = true;
     this.error = '';
-    this.auth.login(this.email, this.password).subscribe({
+    this.auth.login(this.identifier, this.password).subscribe({
       next: () => this.router.navigateByUrl(this.route.snapshot.queryParamMap.get('returnUrl') ?? '/matches'),
       error: (err) => {
         this.loading = false;
-        this.error = err.status === 401 ? 'Email ou mot de passe incorrect.' : 'Erreur lors de la connexion.';
+        this.error = err.status === 401 ? 'Identifiant ou mot de passe incorrect.' : 'Erreur lors de la connexion.';
       }
     });
   }

@@ -6,6 +6,8 @@ import { MatchDTO, EquipeDTO } from '../../models';
 import { MatchService } from '../../services/match.service';
 import { EquipeService } from '../../services/equipe.service';
 import { ApiService } from '../../services/api.service';
+import { ToastService } from '../../services/toast.service';
+import { FavorisService } from '../../services/favoris.service';
 import { MatchFormComponent } from './match-form/match-form.component';
 
 @Component({
@@ -27,6 +29,9 @@ export class AdminComponent implements OnInit {
   syncMessage = '';
   syncError = false;
 
+  favorisEditable = true;
+  togglingFavoris = false;
+
   newEquipe: EquipeDTO = {
     name: ''
   };
@@ -34,12 +39,35 @@ export class AdminComponent implements OnInit {
   constructor(
     private matchService: MatchService,
     private equipeService: EquipeService,
-    private apiService: ApiService
+    private apiService: ApiService,
+    private toast: ToastService,
+    private favorisService: FavorisService
   ) {}
 
   ngOnInit() {
     this.loadMatches();
     this.loadEquipes();
+    this.favorisService.adminGetEditable().subscribe({
+      next: (res) => this.favorisEditable = res.editable,
+      error: () => {}
+    });
+  }
+
+  setFavorisEditable(editable: boolean) {
+    this.togglingFavoris = true;
+    this.favorisService.adminSetEditable(editable).subscribe({
+      next: (res) => {
+        this.favorisEditable = res.editable;
+        this.togglingFavoris = false;
+        this.toast.success(res.editable
+          ? 'Modification des favoris activée.'
+          : 'Modification des favoris désactivée.');
+      },
+      error: () => {
+        this.togglingFavoris = false;
+        this.toast.error('Erreur lors du changement de réglage.');
+      }
+    });
   }
 
   setActiveTab(tab: string) {
@@ -80,7 +108,7 @@ export class AdminComponent implements OnInit {
       },
       error: (error) => {
         console.error('Erreur lors du chargement des matchs:', error);
-        alert('Erreur lors du chargement des matchs.');
+        this.toast.error('Erreur lors du chargement des matchs.');
         this.loading = false;
       }
     });
@@ -93,7 +121,7 @@ export class AdminComponent implements OnInit {
       },
       error: (error) => {
         console.error('Erreur lors du chargement des équipes:', error);
-        alert('Erreur lors du chargement des équipes.');
+        this.toast.error('Erreur lors du chargement des équipes.');
       }
     });
   }
@@ -123,11 +151,11 @@ export class AdminComponent implements OnInit {
         next: () => {
           this.closeMatchForm();
           this.loadMatches();
-          alert('Match modifié avec succès !');
+          this.toast.success('Match modifié !');
         },
         error: (error) => {
           console.error('Erreur lors de la modification:', error);
-          alert('Erreur lors de la modification du match.');
+          this.toast.error('Erreur lors de la modification du match.');
           this.loading = false;
         }
       });
@@ -137,11 +165,11 @@ export class AdminComponent implements OnInit {
         next: () => {
           this.closeMatchForm();
           this.loadMatches();
-          alert('Match créé avec succès !');
+          this.toast.success('Match créé !');
         },
         error: (error) => {
           console.error('Erreur lors de la création:', error);
-          alert('Erreur lors de la création du match.');
+          this.toast.error('Erreur lors de la création du match.');
           this.loading = false;
         }
       });
@@ -154,11 +182,11 @@ export class AdminComponent implements OnInit {
       this.matchService.deleteMatch(id).subscribe({
         next: () => {
           this.loadMatches();
-          alert('Match supprimé avec succès !');
+          this.toast.success('Match supprimé.');
         },
         error: (error) => {
           console.error('Erreur lors de la suppression:', error);
-          alert('Erreur lors de la suppression du match.');
+          this.toast.error('Erreur lors de la suppression du match.');
           this.loading = false;
         }
       });
@@ -168,7 +196,7 @@ export class AdminComponent implements OnInit {
   // Gestion des équipes
   createEquipe() {
     if (!this.newEquipe.name.trim()) {
-      alert('Veuillez remplir le nom de l\'équipe');
+      this.toast.error('Veuillez remplir le nom de l\'équipe.');
       return;
     }
 
@@ -177,12 +205,12 @@ export class AdminComponent implements OnInit {
       next: () => {
         this.newEquipe = { name: '' };
         this.loadEquipes();
-        alert('Équipe créée avec succès !');
+        this.toast.success('Équipe créée !');
         this.loading = false;
       },
       error: (error) => {
         console.error('Erreur lors de la création de l\'équipe:', error);
-        alert('Erreur lors de la création de l\'équipe.');
+        this.toast.error('Erreur lors de la création de l\'équipe.');
         this.loading = false;
       }
     });
@@ -194,12 +222,12 @@ export class AdminComponent implements OnInit {
       this.equipeService.deleteEquipe(id).subscribe({
         next: () => {
           this.loadEquipes();
-          alert('Équipe supprimée avec succès !');
+          this.toast.success('Équipe supprimée.');
           this.loading = false;
         },
         error: (error) => {
           console.error('Erreur lors de la suppression:', error);
-          alert('Erreur lors de la suppression de l\'équipe.');
+          this.toast.error('Erreur lors de la suppression de l\'équipe.');
           this.loading = false;
         }
       });
