@@ -8,4 +8,5 @@ export interface MatchDTO {
   equipe2?: string;
   dateMatch: string;
   resultat?: string;
+  competition?: string;
 }

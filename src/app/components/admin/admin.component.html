@@ -20,21 +20,33 @@
     </button>
   </div>
 
+  <!-- Sélecteur de compétition (onglet Matchs) -->
+  <div class="competition-bar" *ngIf="competitions.length > 1 && activeTab === 'matches'">
+    <button
+      *ngFor="let c of competitions"
+      type="button"
+      class="competition-pill"
+      [class.active]="selectedCompetition === c.code"
+      (click)="selectCompetition(c.code)">
+      {{ c.icone }} {{ c.name }}
+    </button>
+  </div>
+
   <!-- Gestion des Matchs -->
   <div *ngIf="activeTab === 'matches'" class="tab-content">
     <div class="section card">
       <div class="section-header">
-        <h3>Coupe du Monde 2026</h3>
+        <h3>{{ selectedCompetitionName }}</h3>
         <button
           class="btn btn-secondary"
-          (click)="syncWorldCup()"
+          (click)="syncCompetition()"
           [disabled]="syncing">
-          {{ syncing ? 'Synchronisation…' : '🌍 Synchroniser les matchs' }}
+          {{ syncing ? 'Synchronisation…' : '🔄 Synchroniser les matchs' }}
         </button>
       </div>
       <p class="sync-hint">
-        Récupère les 104 matchs de la Coupe du Monde 2026 (équipes, calendrier, scores)
-        et met à jour les résultats. Peut être relancé à tout moment.
+        Récupère les matchs de la compétition (équipes, calendrier, scores) depuis
+        le fournisseur de données et met à jour les résultats. Peut être relancé à tout moment.
       </p>
       <div *ngIf="syncMessage" class="alert" [class.alert-success]="!syncError" [class.alert-danger]="syncError">
         {{ syncMessage }}
@@ -52,6 +64,36 @@
                  (ngModelChange)="setFavorisEditable($event)" [disabled]="togglingFavoris">
           <span class="slider"></span>
         </label>
+      </div>
+
+      <div class="resultats-favoris">
+        <strong>Résultats officiels des favoris</strong>
+        <p class="sync-hint">
+          À valider en fin de compétition. Chaque favori correct rapporte 10 points aux participants.
+          Le buteur / passeur est comparé au texte saisi par les joueurs (insensible à la casse).
+        </p>
+        <div class="resultats-fields">
+          <div class="form-group">
+            <label for="resChampion">Champion</label>
+            <select id="resChampion" name="resChampion" [(ngModel)]="resChampion">
+              <option [ngValue]="''">— Aucun —</option>
+              <option *ngFor="let e of equipesCompetition" [ngValue]="e.name">{{ e.name }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="resButeur">Meilleur buteur</label>
+            <input type="text" id="resButeur" name="resButeur" [(ngModel)]="resButeur"
+                   placeholder="Nom du joueur" maxlength="255">
+          </div>
+          <div class="form-group">
+            <label for="resPasseur">Meilleur passeur</label>
+            <input type="text" id="resPasseur" name="resPasseur" [(ngModel)]="resPasseur"
+                   placeholder="Nom du joueur" maxlength="255">
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary" (click)="saveResultats()" [disabled]="savingResultats">
+          {{ savingResultats ? 'Validation…' : 'Valider les favoris' }}
+        </button>
       </div>
     </div>
 

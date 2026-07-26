@@ -16,6 +16,7 @@ export interface MatchDTO {
   equipe2: string;
   resultat?: string;
   dateMatch: string; // Format ISO string pour les échanges avec l'API
+  competition?: string;
 }
 
 export interface PronosticDTO {
@@ -35,7 +36,7 @@ export interface JoueurDTO {
   poste?: string;
 }
 
-export interface WorldCupSyncResult {
+export interface SyncResult {
   equipesCreees: number;
   matchsCrees: number;
   matchsMisAJour: number;
@@ -50,9 +51,12 @@ private readonly baseUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
-  // Équipes
-  getAllEquipes(): Observable<EquipeDTO[]> {
-    return this.http.get<EquipeDTO[]>(`${this.baseUrl}/equipes`);
+  // Équipes (toutes, ou celles d'une compétition donnée)
+  getAllEquipes(competition?: string): Observable<EquipeDTO[]> {
+    const url = competition
+      ? `${this.baseUrl}/equipes?competition=${encodeURIComponent(competition)}`
+      : `${this.baseUrl}/equipes`;
+    return this.http.get<EquipeDTO[]>(url);
   }
 
   getEquipe(id: number): Observable<EquipeDTO> {
@@ -72,8 +76,11 @@ private readonly baseUrl = environment.apiUrl;
   }
 
   // Matchs
-  getAllMatches(): Observable<MatchDTO[]> {
-    return this.http.get<MatchDTO[]>(`${this.baseUrl}/matches`);
+  getAllMatches(competition?: string): Observable<MatchDTO[]> {
+    const url = competition
+      ? `${this.baseUrl}/matches?competition=${encodeURIComponent(competition)}`
+      : `${this.baseUrl}/matches`;
+    return this.http.get<MatchDTO[]>(url);
   }
 
   getMatch(id: number): Observable<MatchDTO> {
@@ -126,9 +133,9 @@ private readonly baseUrl = environment.apiUrl;
     return this.http.post<number>(`${this.baseUrl}/individus`, individu);
   }
 
-  // Synchronisation Coupe du Monde 2026 (admin)
-  syncWorldCup(): Observable<WorldCupSyncResult> {
-    return this.http.post<WorldCupSyncResult>(`${this.baseUrl}/admin/worldcup/sync`, {});
+  // Synchronisation d'une compétition (admin)
+  syncCompetition(code: string): Observable<SyncResult> {
+    return this.http.post<SyncResult>(`${this.baseUrl}/admin/competitions/${code}/sync`, {});
   }
 
   // Joueurs
