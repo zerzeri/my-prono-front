@@ -11,26 +11,40 @@ export interface Favoris {
   editable: boolean;
 }
 
+export interface OfficialFavoris {
+  champion: string | null;
+  meilleurButeur: string | null;
+  meilleurPasseur: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class FavorisService {
   private readonly baseUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
-  getMine(): Observable<Favoris> {
-    return this.http.get<Favoris>(`${this.baseUrl}/favoris/me`);
+  getMine(competition: string): Observable<Favoris> {
+    return this.http.get<Favoris>(`${this.baseUrl}/favoris/me?competition=${competition}`);
   }
 
-  update(champion: string | null, meilleurButeur: string | null, meilleurPasseur: string | null): Observable<Favoris> {
-    return this.http.put<Favoris>(`${this.baseUrl}/favoris/me`, { champion, meilleurButeur, meilleurPasseur });
+  update(competition: string, champion: string | null, meilleurButeur: string | null, meilleurPasseur: string | null): Observable<Favoris> {
+    return this.http.put<Favoris>(`${this.baseUrl}/favoris/me?competition=${competition}`, { champion, meilleurButeur, meilleurPasseur });
   }
 
   // Admin
-  adminGetEditable(): Observable<{ editable: boolean }> {
-    return this.http.get<{ editable: boolean }>(`${this.baseUrl}/admin/favoris/editable`);
+  adminGetEditable(competition: string): Observable<{ editable: boolean }> {
+    return this.http.get<{ editable: boolean }>(`${this.baseUrl}/admin/favoris/editable?competition=${competition}`);
   }
 
-  adminSetEditable(editable: boolean): Observable<{ editable: boolean }> {
-    return this.http.put<{ editable: boolean }>(`${this.baseUrl}/admin/favoris/editable`, { editable });
+  adminSetEditable(competition: string, editable: boolean): Observable<{ editable: boolean }> {
+    return this.http.put<{ editable: boolean }>(`${this.baseUrl}/admin/favoris/editable?competition=${competition}`, { editable });
+  }
+
+  adminGetResultats(competition: string): Observable<OfficialFavoris> {
+    return this.http.get<OfficialFavoris>(`${this.baseUrl}/admin/favoris/resultats?competition=${competition}`);
+  }
+
+  adminSetResultats(competition: string, champion: string | null, meilleurButeur: string | null, meilleurPasseur: string | null): Observable<OfficialFavoris> {
+    return this.http.put<OfficialFavoris>(`${this.baseUrl}/admin/favoris/resultats?competition=${competition}`, { champion, meilleurButeur, meilleurPasseur });
   }
 }

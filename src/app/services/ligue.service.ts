@@ -18,6 +18,7 @@ export interface ClassementEntry {
   bonsResultats: number;
   scoresExacts: number;
   pronostics: number;
+  favorisTrouves: number;
 }
 
 @Injectable({
@@ -40,7 +41,7 @@ export class LigueService {
     return this.http.post<LigueDTO>(`${this.baseUrl}/join`, { code });
   }
 
-  classement(ligueId: number): Observable<ClassementEntry[]> {
-    return this.http.get<ClassementEntry[]>(`${this.baseUrl}/${ligueId}/classement`);
+  classement(ligueId: number, competition: string): Observable<ClassementEntry[]> {
+    return this.http.get<ClassementEntry[]>(`${this.baseUrl}/${ligueId}/classement?competition=${competition}`);
   }
 }

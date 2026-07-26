@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { ApiService, MatchDTO, PronosticDTO } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
+import { Competition, CompetitionService } from '../../services/competition.service';
 import { FavorisComponent } from '../favoris/favoris.component';
 
 @Component({
@@ -29,19 +30,44 @@ export class MatchesComponent implements OnInit {
     { value: 'finished', label: 'Terminés' }
   ];
 
+  competitions: Competition[] = [];
+  selectedCompetition = '';
+
+  get selectedCompetitionName(): string {
+    return this.competitions.find(c => c.code === this.selectedCompetition)?.name ?? '';
+  }
+
   constructor(
     private apiService: ApiService,
     public auth: AuthService,
-    private toast: ToastService
+    private toast: ToastService,
+    private competitionService: CompetitionService
   ) {}
 
   ngOnInit() {
+    this.competitionService.list().subscribe({
+      next: (competitions) => {
+        this.competitions = competitions;
+        const saved = this.competitionService.selectedCode;
+        this.selectedCompetition = competitions.some(c => c.code === saved)
+          ? saved!
+          : (competitions[0]?.code ?? '');
+        this.loadMatches();
+        this.loadMyPronostics();
+      },
+      error: (error) => console.error('Erreur lors du chargement des compétitions:', error)
+    });
+  }
+
+  selectCompetition(code: string) {
+    if (code === this.selectedCompetition) return;
+    this.selectedCompetition = code;
+    this.competitionService.selectedCode = code;
     this.loadMatches();
-    this.loadMyPronostics();
   }
 
   loadMatches() {
-    this.apiService.getAllMatches().subscribe({
+    this.apiService.getAllMatches(this.selectedCompetition).subscribe({
       next: (matches) => {
         this.matches = matches;
         for (const match of matches) {

@@ -8,6 +8,7 @@ import { EquipeService } from '../../services/equipe.service';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { FavorisService } from '../../services/favoris.service';
+import { Competition, CompetitionService } from '../../services/competition.service';
 import { MatchFormComponent } from './match-form/match-form.component';
 
 @Component({
@@ -32,6 +33,17 @@ export class AdminComponent implements OnInit {
   favorisEditable = true;
   togglingFavoris = false;
 
+  // Résultats officiels des favoris (validation admin en fin de compétition)
+  resChampion = '';
+  resButeur = '';
+  resPasseur = '';
+  savingResultats = false;
+
+  competitions: Competition[] = [];
+  selectedCompetition = '';
+  // Équipes de la compétition sélectionnée (pour le champion des résultats officiels)
+  equipesCompetition: EquipeDTO[] = [];
+
   newEquipe: EquipeDTO = {
     name: ''
   };
@@ -41,21 +53,83 @@ export class AdminComponent implements OnInit {
     private equipeService: EquipeService,
     private apiService: ApiService,
     private toast: ToastService,
-    private favorisService: FavorisService
+    private favorisService: FavorisService,
+    private competitionService: CompetitionService
   ) {}
 
   ngOnInit() {
-    this.loadMatches();
     this.loadEquipes();
-    this.favorisService.adminGetEditable().subscribe({
+    this.competitionService.list().subscribe({
+      next: (competitions) => {
+        this.competitions = competitions;
+        const saved = this.competitionService.selectedCode;
+        this.selectedCompetition = competitions.some(c => c.code === saved)
+          ? saved!
+          : (competitions[0]?.code ?? '');
+        this.onCompetitionChanged();
+      },
+      error: () => {}
+    });
+  }
+
+  get selectedCompetitionName(): string {
+    return this.competitions.find(c => c.code === this.selectedCompetition)?.name ?? '';
+  }
+
+  selectCompetition(code: string) {
+    if (code === this.selectedCompetition) return;
+    this.selectedCompetition = code;
+    this.competitionService.selectedCode = code;
+    this.syncMessage = '';
+    this.closeMatchForm();
+    this.onCompetitionChanged();
+  }
+
+  private onCompetitionChanged() {
+    this.loadMatches();
+    this.apiService.getAllEquipes(this.selectedCompetition).subscribe({
+      next: (equipes) => this.equipesCompetition = equipes.sort((a, b) => a.name.localeCompare(b.name)),
+      error: () => this.equipesCompetition = []
+    });
+    this.favorisService.adminGetEditable(this.selectedCompetition).subscribe({
       next: (res) => this.favorisEditable = res.editable,
       error: () => {}
+    });
+    this.favorisService.adminGetResultats(this.selectedCompetition).subscribe({
+      next: (res) => {
+        this.resChampion = res.champion ?? '';
+        this.resButeur = res.meilleurButeur ?? '';
+        this.resPasseur = res.meilleurPasseur ?? '';
+      },
+      error: () => {}
+    });
+  }
+
+  saveResultats() {
+    this.savingResultats = true;
+    this.favorisService.adminSetResultats(
+      this.selectedCompetition,
+      this.resChampion || null,
+      this.resButeur || null,
+      this.resPasseur || null
+    ).subscribe({
+      next: (res) => {
+        this.resChampion = res.champion ?? '';
+        this.resButeur = res.meilleurButeur ?? '';
+        this.resPasseur = res.meilleurPasseur ?? '';
+        this.savingResultats = false;
+        this.toast.success('Résultats des favoris validés — les points sont attribués.');
+      },
+      error: () => {
+        this.savingResultats = false;
+        this.toast.error('Erreur lors de la validation des résultats.');
+      }
     });
   }
 
   setFavorisEditable(editable: boolean) {
     this.togglingFavoris = true;
-    this.favorisService.adminSetEditable(editable).subscribe({
+    this.favorisService.adminSetEditable(this.selectedCompetition, editable).subscribe({
       next: (res) => {
         this.favorisEditable = res.editable;
         this.togglingFavoris = false;
@@ -75,11 +149,11 @@ export class AdminComponent implements OnInit {
     this.closeMatchForm();
   }
 
-  syncWorldCup() {
+  syncCompetition() {
     this.syncing = true;
     this.syncMessage = '';
     this.syncError = false;
-    this.apiService.syncWorldCup().subscribe({
+    this.apiService.syncCompetition(this.selectedCompetition).subscribe({
       next: (result) => {
         this.syncing = false;
         this.syncMessage = `Synchronisation terminée : ${result.total} matchs traités — `
@@ -92,14 +166,28 @@ export class AdminComponent implements OnInit {
         console.error('Erreur lors de la synchronisation:', error);
         this.syncing = false;
         this.syncError = true;
-        this.syncMessage = 'Erreur lors de la synchronisation. Réessayez dans quelques instants.';
+        this.syncMessage = 'Échec de la synchronisation : ' + this.extractErrorMessage(error);
       }
     });
   }
 
+  /** Extrait le message d'erreur renvoyé par le backend (sinon message générique). */
+  private extractErrorMessage(error: any): string {
+    const raw = error?.error?.message;
+    if (typeof raw === 'string' && raw.length > 0) {
+      // Le backend renvoie parfois « 503 SERVICE_UNAVAILABLE "message" » : on extrait le message
+      const quoted = raw.match(/"([^"]+)"/);
+      return quoted ? quoted[1] : raw;
+    }
+    if (error?.status === 0) {
+      return 'le serveur est injoignable (backend arrêté ?).';
+    }
+    return `erreur ${error?.status ?? '?'}. Réessayez dans quelques instants.`;
+  }
+
   loadMatches() {
     this.loading = true;
-    this.matchService.getAllMatches().subscribe({
+    this.matchService.getAllMatches(this.selectedCompetition).subscribe({
       next: (matches) => {
         this.matches = matches.sort((a, b) => 
           new Date(a.dateMatch).getTime() - new Date(b.dateMatch).getTime()
@@ -160,7 +248,8 @@ export class AdminComponent implements OnInit {
         }
       });
     } else {
-      // Création
+      // Création : rattache le match à la compétition sélectionnée
+      match.competition = this.selectedCompetition;
       this.matchService.createMatch(match).subscribe({
         next: () => {
           this.closeMatchForm();

@@ -60,6 +60,34 @@ import { CommonModule } from '@angular/common';
     </div>
 
     <div class="card section">
+      <h3>Les favoris de la Coupe du Monde</h3>
+      <p style="margin-bottom: 0.75rem">
+        En plus des matchs, choisissez trois favoris pour la compétition : le
+        <strong>champion</strong>, le <strong>meilleur buteur</strong> et le
+        <strong>meilleur passeur</strong>. Chaque favori trouvé rapporte
+        <strong>10 points</strong>, ajoutés à votre total quand l'administrateur
+        valide les résultats officiels à la fin de la compétition.
+      </p>
+      <div class="points-grid">
+        <div class="point-card highlight">
+          <span class="pts">10 pts</span>
+          <h4>Champion trouvé</h4>
+          <p>L'équipe que vous avez désignée remporte la Coupe du Monde.</p>
+        </div>
+        <div class="point-card highlight">
+          <span class="pts">10 pts</span>
+          <h4>Meilleur buteur trouvé</h4>
+          <p>Le joueur que vous avez indiqué finit meilleur buteur.</p>
+        </div>
+        <div class="point-card highlight">
+          <span class="pts">10 pts</span>
+          <h4>Meilleur passeur trouvé</h4>
+          <p>Le joueur que vous avez indiqué finit meilleur passeur.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card section">
       <h3>Les ligues</h3>
       <p>
         Créez une ligue et partagez le lien d'invitation avec vos amis, ou

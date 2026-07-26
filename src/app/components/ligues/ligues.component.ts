@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ClassementEntry, LigueDTO, LigueService } from '../../services/ligue.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
+import { Competition, CompetitionService } from '../../services/competition.service';
 
 @Component({
   selector: 'app-ligues',
@@ -81,6 +82,13 @@ import { ToastService } from '../../services/toast.service';
 
       <!-- Classement -->
       <div *ngIf="activeTab === 'classement'">
+        <div class="classement-competitions" *ngIf="competitions.length > 1">
+          <button *ngFor="let c of competitions" type="button" class="mini-pill"
+                  [class.active]="selectedCompetition === c.code"
+                  (click)="selectCompetition(c.code)">
+            {{ c.icone }} {{ c.name }}
+          </button>
+        </div>
         <div *ngIf="loadingClassement" class="spinner"></div>
         <div class="table-wrap" *ngIf="!loadingClassement">
           <table class="classement-table">
@@ -91,6 +99,7 @@ import { ToastService } from '../../services/toast.service';
                 <th>Pts</th>
                 <th title="Scores exacts (5 pts)">🎯</th>
                 <th title="Bons résultats (2 pts)">✔️</th>
+                <th title="Favoris trouvés (10 pts chacun)">🎖️</th>
                 <th title="Pronostics comptés">🗳️</th>
               </tr>
             </thead>
@@ -102,12 +111,13 @@ import { ToastService } from '../../services/toast.service';
                 <td class="points">{{ entry.points }}</td>
                 <td>{{ entry.scoresExacts }}</td>
                 <td>{{ entry.bonsResultats }}</td>
+                <td>{{ entry.favorisTrouves }}</td>
                 <td>{{ entry.pronostics }}</td>
               </tr>
             </tbody>
           </table>
         </div>
-        <p class="regle-hint">Bon résultat (1/N/2, prolongations comprises) : 2 pts · Score exact : 5 pts.</p>
+        <p class="regle-hint">Bon résultat (1/N/2, prolongations comprises) : 2 pts · Score exact : 5 pts · Favori trouvé : 10 pts.</p>
       </div>
 
       <!-- Membres -->
@@ -244,6 +254,31 @@ import { ToastService } from '../../services/toast.service';
       color: #fff;
     }
 
+    .classement-competitions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+
+    .mini-pill {
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-2);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.35rem 0.75rem;
+      cursor: pointer;
+    }
+
+    .mini-pill.active {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+    }
+
     .table-wrap {
       overflow-x: auto;
     }
@@ -327,6 +362,9 @@ export class LiguesComponent implements OnInit {
   classement: ClassementEntry[] = [];
   activeTab: 'classement' | 'membres' = 'classement';
 
+  competitions: Competition[] = [];
+  selectedCompetition = '';
+
   newName = '';
   joinInput = '';
   joinError = '';
@@ -339,11 +377,30 @@ export class LiguesComponent implements OnInit {
   constructor(
     private ligueService: LigueService,
     public auth: AuthService,
-    private toast: ToastService
+    private toast: ToastService,
+    private competitionService: CompetitionService
   ) {}
 
   ngOnInit() {
-    this.load();
+    this.competitionService.list().subscribe({
+      next: (competitions) => {
+        this.competitions = competitions;
+        const saved = this.competitionService.selectedCode;
+        this.selectedCompetition = competitions.some(c => c.code === saved)
+          ? saved!
+          : (competitions[0]?.code ?? '');
+        this.load();
+      },
+      error: () => this.load()
+    });
+  }
+
+  selectCompetition(code: string) {
+    if (code === this.selectedCompetition) return;
+    this.selectedCompetition = code;
+    if (this.selected) {
+      this.loadClassement(this.selected.id);
+    }
   }
 
   load(selectId?: number) {
@@ -371,7 +428,7 @@ export class LiguesComponent implements OnInit {
 
   loadClassement(ligueId: number) {
     this.loadingClassement = true;
-    this.ligueService.classement(ligueId).subscribe({
+    this.ligueService.classement(ligueId, this.selectedCompetition).subscribe({
       next: (classement) => {
         this.classement = classement;
         this.loadingClassement = false;

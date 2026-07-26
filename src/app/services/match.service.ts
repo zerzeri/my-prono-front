@@ -16,8 +16,9 @@ export class MatchService {
 
   constructor(private http: HttpClient) {}
 
-  getAllMatches(): Observable<MatchDTO[]> {
-    return this.http.get<MatchDTO[]>(this.baseUrl).pipe(
+  getAllMatches(competition?: string): Observable<MatchDTO[]> {
+    const url = competition ? `${this.baseUrl}?competition=${encodeURIComponent(competition)}` : this.baseUrl;
+    return this.http.get<MatchDTO[]>(url).pipe(
       tap(matches => this.matchesSubject.next(matches))
     );
   }

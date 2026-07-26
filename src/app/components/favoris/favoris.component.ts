@@ -1,5 +1,5 @@
 // src/app/components/favoris/favoris.component.ts
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Favoris, FavorisService } from '../../services/favoris.service';
@@ -13,7 +13,7 @@ import { ToastService } from '../../services/toast.service';
   template: `
     <div class="card favoris-card" *ngIf="favoris">
       <div class="favoris-head">
-        <h3>🏆 Vos favoris — Coupe du Monde</h3>
+        <h3>🏆 Vos favoris{{ competitionName ? ' — ' + competitionName : '' }}</h3>
         <span *ngIf="!favoris.editable" class="badge badge-expired">🔒 Verrouillé</span>
       </div>
 
@@ -134,7 +134,10 @@ import { ToastService } from '../../services/toast.service';
     }
   `]
 })
-export class FavorisComponent implements OnInit {
+export class FavorisComponent implements OnChanges {
+  @Input() competition!: string;
+  @Input() competitionName = '';
+
   favoris: Favoris | null = null;
   equipes: EquipeDTO[] = [];
   champion = '';
@@ -148,15 +151,18 @@ export class FavorisComponent implements OnInit {
     private toast: ToastService
   ) {}
 
-  ngOnInit() {
-    this.favorisService.getMine().subscribe({
+  ngOnChanges() {
+    if (!this.competition) {
+      return;
+    }
+    this.favorisService.getMine(this.competition).subscribe({
       next: (favoris) => {
         this.favoris = favoris;
         this.champion = favoris.champion ?? '';
         this.meilleurButeur = favoris.meilleurButeur ?? '';
         this.meilleurPasseur = favoris.meilleurPasseur ?? '';
         if (favoris.editable) {
-          this.apiService.getAllEquipes().subscribe({
+          this.apiService.getAllEquipes(this.competition).subscribe({
             next: (equipes) => this.equipes = equipes.sort((a, b) => a.name.localeCompare(b.name)),
             error: () => {}
           });
@@ -171,6 +177,7 @@ export class FavorisComponent implements OnInit {
   save() {
     this.saving = true;
     this.favorisService.update(
+      this.competition,
       this.champion || null,
       this.meilleurButeur || null,
       this.meilleurPasseur || null

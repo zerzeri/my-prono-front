@@ -10,6 +10,7 @@ export const routes: Routes = [
   },
   {
     path: 'matches',
+    canActivate: [authGuard],
     loadComponent: () => import('./components/matches/matches.component').then(m => m.MatchesComponent)
   },
   {
