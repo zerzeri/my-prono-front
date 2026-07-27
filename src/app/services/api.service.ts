@@ -17,6 +17,7 @@ export interface MatchDTO {
   resultat?: string;
   dateMatch: string; // Format ISO string pour les échanges avec l'API
   competition?: string;
+  journee?: number;
 }
 
 export interface PronosticDTO {
@@ -41,6 +42,7 @@ export interface SyncResult {
   matchsCrees: number;
   matchsMisAJour: number;
   total: number;
+  classementLignes: number;
 }
 
 @Injectable({

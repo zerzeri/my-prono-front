@@ -8,6 +8,20 @@ export interface Competition {
   code: string;
   name: string;
   icone: string;
+  hasStandings: boolean;
+}
+
+export interface ClassementLigne {
+  position: number;
+  team: string;
+  joues: number;
+  gagnes: number;
+  nuls: number;
+  perdus: number;
+  butsPour: number;
+  butsContre: number;
+  difference: number;
+  points: number;
 }
 
 const SELECTED_KEY = 'myprono_competition';
@@ -24,6 +38,10 @@ export class CompetitionService {
       this.cache$ = this.http.get<Competition[]>(`${this.baseUrl}/competitions`).pipe(shareReplay(1));
     }
     return this.cache$;
+  }
+
+  classement(code: string): Observable<ClassementLigne[]> {
+    return this.http.get<ClassementLigne[]>(`${this.baseUrl}/competitions/${code}/classement`);
   }
 
   /** Compétition sélectionnée par l'utilisateur (partagée entre Matchs et Favoris). */

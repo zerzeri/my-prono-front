@@ -44,6 +44,11 @@ export const routes: Routes = [
     loadComponent: () => import('./components/regles/regles.component').then(m => m.ReglesComponent)
   },
   {
+    path: 'classement',
+    canActivate: [authGuard],
+    loadComponent: () => import('./components/classement/classement.component').then(m => m.ClassementComponent)
+  },
+  {
     path: 'ligues',
     canActivate: [authGuard],
     loadComponent: () => import('./components/ligues/ligues.component').then(m => m.LiguesComponent)

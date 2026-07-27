@@ -9,4 +9,5 @@ export interface MatchDTO {
   dateMatch: string;
   resultat?: string;
   competition?: string;
+  journee?: number;
 }

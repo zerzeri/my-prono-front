@@ -129,8 +129,19 @@
         <p>Aucun match créé pour le moment.</p>
       </div>
 
+      <!-- Championnats : navigation par journée -->
+      <div class="journee-bar" *ngIf="journeeMode && !showMatchForm">
+        <button type="button" class="journee-nav" (click)="prevJournee()"
+                [disabled]="!canPrevJournee" aria-label="Journée précédente">◀</button>
+        <select class="journee-select" [(ngModel)]="selectedJournee">
+          <option *ngFor="let j of journees" [ngValue]="j">Journée {{ j }}</option>
+        </select>
+        <button type="button" class="journee-nav" (click)="nextJournee()"
+                [disabled]="!canNextJournee" aria-label="Journée suivante">▶</button>
+      </div>
+
       <div class="matches-list">
-        <div *ngFor="let match of matches" class="match-item">
+        <div *ngFor="let match of displayedMatches" class="match-item">
           <div class="match-info">
             <div class="match-title">
               <h5>{{ match.equipe1 }} <span class="vs-sep">vs</span> {{ match.equipe2 }}</h5>

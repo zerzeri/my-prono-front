@@ -209,3 +209,43 @@
   border-color: var(--brand);
   color: #fff;
 }
+
+/* Navigation par journée (championnats) */
+.journee-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.journee-nav {
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.journee-nav:hover:not(:disabled) {
+  border-color: var(--brand);
+  color: var(--brand-strong);
+}
+
+.journee-nav:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.journee-select {
+  flex: 1;
+  max-width: 220px;
+  text-align: center;
+  font-weight: 600;
+}

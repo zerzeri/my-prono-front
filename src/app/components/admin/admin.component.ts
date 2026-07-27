@@ -44,6 +44,22 @@ export class AdminComponent implements OnInit {
   // Équipes de la compétition sélectionnée (pour le champion des résultats officiels)
   equipesCompetition: EquipeDTO[] = [];
 
+  // Navigation par journée (championnats). Vide pour la Coupe du Monde.
+  journees: number[] = [];
+  selectedJournee: number | null = null;
+
+  get journeeMode(): boolean {
+    return this.journees.length > 0;
+  }
+
+  // Matchs affichés : une journée à la fois pour les championnats, tous sinon.
+  get displayedMatches(): MatchDTO[] {
+    if (!this.journeeMode) {
+      return this.matches;
+    }
+    return this.matches.filter(m => m.journee === this.selectedJournee);
+  }
+
   newEquipe: EquipeDTO = {
     name: ''
   };
@@ -81,6 +97,7 @@ export class AdminComponent implements OnInit {
     this.selectedCompetition = code;
     this.competitionService.selectedCode = code;
     this.syncMessage = '';
+    this.selectedJournee = null; // recalcule la journée courante de la nouvelle compétition
     this.closeMatchForm();
     this.onCompetitionChanged();
   }
@@ -158,7 +175,8 @@ export class AdminComponent implements OnInit {
         this.syncing = false;
         this.syncMessage = `Synchronisation terminée : ${result.total} matchs traités — `
           + `${result.equipesCreees} équipe(s) créée(s), ${result.matchsCrees} match(s) créé(s), `
-          + `${result.matchsMisAJour} mis à jour.`;
+          + `${result.matchsMisAJour} mis à jour`
+          + (result.classementLignes > 0 ? `, classement (${result.classementLignes} équipes).` : '.');
         this.loadMatches();
         this.loadEquipes();
       },
@@ -189,9 +207,10 @@ export class AdminComponent implements OnInit {
     this.loading = true;
     this.matchService.getAllMatches(this.selectedCompetition).subscribe({
       next: (matches) => {
-        this.matches = matches.sort((a, b) => 
+        this.matches = matches.sort((a, b) =>
           new Date(a.dateMatch).getTime() - new Date(b.dateMatch).getTime()
         );
+        this.computeJournees();
         this.loading = false;
       },
       error: (error) => {
@@ -200,6 +219,53 @@ export class AdminComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  private computeJournees() {
+    const set = new Set<number>();
+    for (const m of this.matches) {
+      if (m.journee != null) {
+        set.add(m.journee);
+      }
+    }
+    this.journees = [...set].sort((a, b) => a - b);
+    if (this.journees.length === 0) {
+      this.selectedJournee = null;
+    } else if (this.selectedJournee == null || !this.journees.includes(this.selectedJournee)) {
+      this.selectedJournee = this.currentJournee();
+    }
+  }
+
+  // Journée du prochain match à venir, sinon la dernière journée
+  private currentJournee(): number {
+    const now = Date.now();
+    const upcoming = this.matches
+      .filter(m => m.journee != null && new Date(m.dateMatch).getTime() >= now)
+      .sort((a, b) => new Date(a.dateMatch).getTime() - new Date(b.dateMatch).getTime());
+    return upcoming.length > 0 ? upcoming[0].journee! : this.journees[this.journees.length - 1];
+  }
+
+  prevJournee() {
+    const i = this.journees.indexOf(this.selectedJournee!);
+    if (i > 0) {
+      this.selectedJournee = this.journees[i - 1];
+    }
+  }
+
+  nextJournee() {
+    const i = this.journees.indexOf(this.selectedJournee!);
+    if (i >= 0 && i < this.journees.length - 1) {
+      this.selectedJournee = this.journees[i + 1];
+    }
+  }
+
+  get canPrevJournee(): boolean {
+    return this.journees.indexOf(this.selectedJournee!) > 0;
+  }
+
+  get canNextJournee(): boolean {
+    const i = this.journees.indexOf(this.selectedJournee!);
+    return i >= 0 && i < this.journees.length - 1;
   }
 
   loadEquipes() {
