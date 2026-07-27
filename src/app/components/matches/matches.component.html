@@ -18,7 +18,19 @@
   <app-favoris *ngIf="auth.isLoggedIn" [competition]="selectedCompetition"
                [competitionName]="selectedCompetitionName"></app-favoris>
 
-  <div class="filter-bar">
+  <!-- Championnats : navigation par journée -->
+  <div class="journee-bar" *ngIf="journeeMode">
+    <button type="button" class="journee-nav" (click)="prevJournee()"
+            [disabled]="!canPrevJournee" aria-label="Journée précédente">◀</button>
+    <select class="journee-select" [(ngModel)]="selectedJournee" (ngModelChange)="applyFilter()">
+      <option *ngFor="let j of journees" [ngValue]="j">Journée {{ j }}</option>
+    </select>
+    <button type="button" class="journee-nav" (click)="nextJournee()"
+            [disabled]="!canNextJournee" aria-label="Journée suivante">▶</button>
+  </div>
+
+  <!-- Coupes (sans journée, ex. Coupe du Monde) : filtres par statut -->
+  <div class="filter-bar" *ngIf="!journeeMode">
     <button
       *ngFor="let f of filters"
       type="button"

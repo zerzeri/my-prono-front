@@ -33,6 +33,14 @@ export class MatchesComponent implements OnInit {
   competitions: Competition[] = [];
   selectedCompetition = '';
 
+  // Navigation par journée (championnats). Vide pour la Coupe du Monde.
+  journees: number[] = [];
+  selectedJournee: number | null = null;
+
+  get journeeMode(): boolean {
+    return this.journees.length > 0;
+  }
+
   get selectedCompetitionName(): string {
     return this.competitions.find(c => c.code === this.selectedCompetition)?.name ?? '';
   }
@@ -63,6 +71,7 @@ export class MatchesComponent implements OnInit {
     if (code === this.selectedCompetition) return;
     this.selectedCompetition = code;
     this.competitionService.selectedCode = code;
+    this.selectedJournee = null; // recalcule la journée courante de la nouvelle compétition
     this.loadMatches();
   }
 
@@ -75,6 +84,7 @@ export class MatchesComponent implements OnInit {
             this.scores[match.id] = { a: '', b: '' };
           }
         }
+        this.computeJournees();
         this.applyFilter();
       },
       error: (error) => {
@@ -105,7 +115,67 @@ export class MatchesComponent implements OnInit {
     });
   }
 
+  private computeJournees() {
+    const set = new Set<number>();
+    for (const m of this.matches) {
+      if (m.journee != null) {
+        set.add(m.journee);
+      }
+    }
+    this.journees = [...set].sort((a, b) => a - b);
+    if (this.journees.length === 0) {
+      this.selectedJournee = null;
+    } else if (this.selectedJournee == null || !this.journees.includes(this.selectedJournee)) {
+      this.selectedJournee = this.currentJournee();
+    }
+  }
+
+  // Journée du prochain match à venir, sinon la dernière journée
+  private currentJournee(): number {
+    const now = Date.now();
+    const upcoming = this.matches
+      .filter(m => m.journee != null && new Date(m.dateMatch).getTime() >= now)
+      .sort((a, b) => new Date(a.dateMatch).getTime() - new Date(b.dateMatch).getTime());
+    return upcoming.length > 0 ? upcoming[0].journee! : this.journees[this.journees.length - 1];
+  }
+
+  selectJournee(j: number) {
+    this.selectedJournee = j;
+    this.applyFilter();
+  }
+
+  prevJournee() {
+    const i = this.journees.indexOf(this.selectedJournee!);
+    if (i > 0) {
+      this.selectJournee(this.journees[i - 1]);
+    }
+  }
+
+  nextJournee() {
+    const i = this.journees.indexOf(this.selectedJournee!);
+    if (i >= 0 && i < this.journees.length - 1) {
+      this.selectJournee(this.journees[i + 1]);
+    }
+  }
+
+  get canPrevJournee(): boolean {
+    return this.journees.indexOf(this.selectedJournee!) > 0;
+  }
+
+  get canNextJournee(): boolean {
+    const i = this.journees.indexOf(this.selectedJournee!);
+    return i >= 0 && i < this.journees.length - 1;
+  }
+
   applyFilter() {
+    // Championnats : on affiche une journée à la fois
+    if (this.journeeMode) {
+      this.filteredMatches = this.matches
+        .filter(m => m.journee === this.selectedJournee)
+        .sort((a, b) => new Date(a.dateMatch).getTime() - new Date(b.dateMatch).getTime());
+      return;
+    }
+
     const now = new Date();
     switch (this.filterType) {
       case 'finished':
