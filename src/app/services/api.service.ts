@@ -26,17 +26,6 @@ export interface PronosticDTO {
   match?: number; // ID du match
 }
 
-export interface IndividuDTO {
-  id?: number;
-  name: string;
-}
-
-export interface JoueurDTO {
-  id?: number;
-  name: string;
-  poste?: string;
-}
-
 export interface SyncResult {
   equipesCreees: number;
   matchsCrees: number;
@@ -126,26 +115,9 @@ private readonly baseUrl = environment.apiUrl;
     return this.http.delete<void>(`${this.baseUrl}/pronostics/${id}`);
   }
 
-  // Individus
-  getAllIndividus(): Observable<IndividuDTO[]> {
-    return this.http.get<IndividuDTO[]>(`${this.baseUrl}/individus`);
-  }
-
-  createIndividu(individu: IndividuDTO): Observable<number> {
-    return this.http.post<number>(`${this.baseUrl}/individus`, individu);
-  }
-
   // Synchronisation d'une compétition (admin)
   syncCompetition(code: string): Observable<SyncResult> {
     return this.http.post<SyncResult>(`${this.baseUrl}/admin/competitions/${code}/sync`, {});
   }
 
-  // Joueurs
-  getAllJoueurs(): Observable<JoueurDTO[]> {
-    return this.http.get<JoueurDTO[]>(`${this.baseUrl}/joueurs`);
-  }
-
-  createJoueur(joueur: JoueurDTO): Observable<number> {
-    return this.http.post<number>(`${this.baseUrl}/joueurs`, joueur);
-  }
 }

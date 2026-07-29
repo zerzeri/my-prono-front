@@ -1,23 +1,4 @@
 <div class="matches-container">
-  <div class="page-header">
-    <h2>Matchs</h2>
-    <p class="subtitle">Consultez les matchs et déposez vos pronostics.</p>
-  </div>
-
-  <div class="competition-bar" *ngIf="competitions.length > 1">
-    <button
-      *ngFor="let c of competitions"
-      type="button"
-      class="competition-pill"
-      [class.active]="selectedCompetition === c.code"
-      (click)="selectCompetition(c.code)">
-      {{ c.icone }} {{ c.name }}
-    </button>
-  </div>
-
-  <app-favoris *ngIf="auth.isLoggedIn" [competition]="selectedCompetition"
-               [competitionName]="selectedCompetitionName"></app-favoris>
-
   <!-- Championnats : navigation par journée -->
   <div class="journee-bar" *ngIf="journeeMode">
     <button type="button" class="journee-nav" (click)="prevJournee()"
@@ -67,32 +48,31 @@
 
       <div class="pronostic-section" *ngIf="canMakePronostic(match) && auth.isLoggedIn">
         <label>Votre pronostic</label>
-        <div class="pronostic-input">
-          <div class="score-fields">
-            <input
-              type="number" min="0" inputmode="numeric"
-              class="score-box"
-              [attr.aria-label]="'Buts ' + match.equipe1"
-              [(ngModel)]="scores[match.id!].a"
-              (keyup.enter)="submitPronostic(match.id!)">
-            <span class="score-sep">–</span>
-            <input
-              type="number" min="0" inputmode="numeric"
-              class="score-box"
-              [attr.aria-label]="'Buts ' + match.equipe2"
-              [(ngModel)]="scores[match.id!].b"
-              (keyup.enter)="submitPronostic(match.id!)">
-          </div>
-          <button
-            type="button"
-            (click)="submitPronostic(match.id!)"
-            class="btn btn-primary"
-            [disabled]="!bothScoresFilled(match.id!)">
-            {{ myPronostics[match.id!] ? 'Modifier' : 'Valider' }}
-          </button>
+        <div class="score-fields">
+          <input
+            #homeBox
+            type="number" min="0" inputmode="numeric"
+            class="score-box"
+            [attr.aria-label]="'Buts ' + match.equipe1"
+            [(ngModel)]="scores[match.id!].a"
+            (input)="onHomeInput(match.id!, homeBox, awayBox)"
+            (change)="onScoreCommit(match.id!)"
+            (keyup.enter)="onScoreCommit(match.id!)">
+          <span class="score-sep">–</span>
+          <input
+            #awayBox
+            type="number" min="0" inputmode="numeric"
+            class="score-box"
+            [attr.aria-label]="'Buts ' + match.equipe2"
+            [(ngModel)]="scores[match.id!].b"
+            (change)="onScoreCommit(match.id!)"
+            (keyup.enter)="onScoreCommit(match.id!)">
         </div>
         <p class="prono-hint" *ngIf="myPronostics[match.id!]">
           Modifiable jusqu'au coup d'envoi.
+        </p>
+        <p class="prono-hint" *ngIf="!myPronostics[match.id!]">
+          Enregistrement automatique.
         </p>
       </div>
 

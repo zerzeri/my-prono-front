@@ -5,13 +5,20 @@ import { adminGuard, authGuard } from './guards/auth.guards';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: '/matches',
+    redirectTo: '/championnats',
     pathMatch: 'full'
   },
+  // Rubrique Championnats : Ligue 1, Premier League… (matchs + classement)
+  {
+    path: 'championnats',
+    canActivate: [authGuard],
+    loadComponent: () => import('./components/championnats/championnats.component').then(m => m.ChampionnatsComponent)
+  },
+  // Anciennes adresses, conservées pour les liens déjà partagés
   {
     path: 'matches',
-    canActivate: [authGuard],
-    loadComponent: () => import('./components/matches/matches.component').then(m => m.MatchesComponent)
+    redirectTo: '/championnats',
+    pathMatch: 'full'
   },
   {
     path: 'admin',
@@ -45,8 +52,8 @@ export const routes: Routes = [
   },
   {
     path: 'classement',
-    canActivate: [authGuard],
-    loadComponent: () => import('./components/classement/classement.component').then(m => m.ClassementComponent)
+    redirectTo: '/championnats',
+    pathMatch: 'full'
   },
   {
     path: 'ligues',

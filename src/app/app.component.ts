@@ -12,14 +12,17 @@ import { ToastComponent } from './components/toast/toast.component';
   template: `
     <header class="header">
       <div class="header-inner">
-        <a routerLink="/matches" class="brand">
+        <a routerLink="/championnats" class="brand">
           <span class="brand-icon">⚽</span>
           <span class="brand-name">My<em>Prono</em></span>
         </a>
 
+        <!--
+          Une entrée par rubrique du produit. La Ligue des Champions (V2) et les
+          coupes internationales (V3) viendront s'ajouter ici.
+        -->
         <nav class="nav">
-          <a routerLink="/matches" routerLinkActive="active" class="nav-link">Matchs</a>
-          <a *ngIf="auth.user$ | async" routerLink="/classement" routerLinkActive="active" class="nav-link">Classement</a>
+          <a routerLink="/championnats" routerLinkActive="active" class="nav-link">Championnats</a>
           <a *ngIf="auth.user$ | async" routerLink="/ligues" routerLinkActive="active" class="nav-link">Ligues</a>
           <a *ngIf="(auth.user$ | async)?.role === 'ADMIN'" routerLink="/admin" routerLinkActive="active" class="nav-link">Administration</a>
         </nav>

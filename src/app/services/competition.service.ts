@@ -4,11 +4,16 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, shareReplay } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+/** Rubriques du produit. Seule CHAMPIONNAT a une interface en V1. */
+export type Section = 'CHAMPIONNAT' | 'CHAMPIONS_LEAGUE' | 'COUPE_INTERNATIONALE';
+
 export interface Competition {
   code: string;
   name: string;
   icone: string;
+  section: Section;
   hasStandings: boolean;
+  hasFavoris: boolean;
 }
 
 export interface ClassementLigne {
@@ -29,15 +34,22 @@ const SELECTED_KEY = 'myprono_competition';
 @Injectable({ providedIn: 'root' })
 export class CompetitionService {
   private readonly baseUrl = environment.apiUrl;
-  private cache$?: Observable<Competition[]>;
+  private readonly cache = new Map<string, Observable<Competition[]>>();
 
   constructor(private http: HttpClient) {}
 
-  list(): Observable<Competition[]> {
-    if (!this.cache$) {
-      this.cache$ = this.http.get<Competition[]>(`${this.baseUrl}/competitions`).pipe(shareReplay(1));
+  /** Compétitions d'une section (toutes si la section est omise). */
+  list(section?: Section): Observable<Competition[]> {
+    const key = section ?? 'ALL';
+    let cached = this.cache.get(key);
+    if (!cached) {
+      const url = section
+        ? `${this.baseUrl}/competitions?section=${section}`
+        : `${this.baseUrl}/competitions`;
+      cached = this.http.get<Competition[]>(url).pipe(shareReplay(1));
+      this.cache.set(key, cached);
     }
-    return this.cache$;
+    return cached;
   }
 
   classement(code: string): Observable<ClassementLigne[]> {

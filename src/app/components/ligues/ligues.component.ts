@@ -3,7 +3,6 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ClassementEntry, LigueDTO, LigueService } from '../../services/ligue.service';
-import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { Competition, CompetitionService } from '../../services/competition.service';
 
@@ -105,9 +104,9 @@ import { Competition, CompetitionService } from '../../services/competition.serv
             </thead>
             <tbody>
               <tr *ngFor="let entry of classement; let i = index"
-                  [class.me]="entry.email === auth.user?.email">
+                  [class.me]="entry.moi">
                 <td class="rank">{{ i + 1 }}</td>
-                <td class="col-joueur">{{ entry.email }}</td>
+                <td class="col-joueur">{{ entry.username }}</td>
                 <td class="points">{{ entry.points }}</td>
                 <td>{{ entry.scoresExacts }}</td>
                 <td>{{ entry.bonsResultats }}</td>
@@ -376,13 +375,13 @@ export class LiguesComponent implements OnInit {
 
   constructor(
     private ligueService: LigueService,
-    public auth: AuthService,
     private toast: ToastService,
     private competitionService: CompetitionService
   ) {}
 
   ngOnInit() {
-    this.competitionService.list().subscribe({
+    // V1 : les classements de ligue ne portent que sur les championnats.
+    this.competitionService.list('CHAMPIONNAT').subscribe({
       next: (competitions) => {
         this.competitions = competitions;
         const saved = this.competitionService.selectedCode;

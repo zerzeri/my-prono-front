@@ -1,21 +1,22 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnChanges, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ApiService, MatchDTO, PronosticDTO } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
-import { Competition, CompetitionService } from '../../services/competition.service';
-import { FavorisComponent } from '../favoris/favoris.component';
 
 @Component({
   selector: 'app-matches',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, FavorisComponent],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './matches.component.html',
   styleUrl: './matches.component.css'
 })
-export class MatchesComponent implements OnInit {
+export class MatchesComponent implements OnInit, OnChanges {
+  /** Compétition à afficher, fournie par la rubrique parente. */
+  @Input() competition!: string;
+
   matches: MatchDTO[] = [];
   filteredMatches: MatchDTO[] = [];
   myPronostics: { [matchId: number]: PronosticDTO } = {};
@@ -30,10 +31,7 @@ export class MatchesComponent implements OnInit {
     { value: 'finished', label: 'Terminés' }
   ];
 
-  competitions: Competition[] = [];
-  selectedCompetition = '';
-
-  // Navigation par journée (championnats). Vide pour la Coupe du Monde.
+  // Navigation par journée (championnats). Vide pour les compétitions sans journée.
   journees: number[] = [];
   selectedJournee: number | null = null;
 
@@ -41,42 +39,26 @@ export class MatchesComponent implements OnInit {
     return this.journees.length > 0;
   }
 
-  get selectedCompetitionName(): string {
-    return this.competitions.find(c => c.code === this.selectedCompetition)?.name ?? '';
-  }
-
   constructor(
     private apiService: ApiService,
     public auth: AuthService,
-    private toast: ToastService,
-    private competitionService: CompetitionService
+    private toast: ToastService
   ) {}
 
   ngOnInit() {
-    this.competitionService.list().subscribe({
-      next: (competitions) => {
-        this.competitions = competitions;
-        const saved = this.competitionService.selectedCode;
-        this.selectedCompetition = competitions.some(c => c.code === saved)
-          ? saved!
-          : (competitions[0]?.code ?? '');
-        this.loadMatches();
-        this.loadMyPronostics();
-      },
-      error: (error) => console.error('Erreur lors du chargement des compétitions:', error)
-    });
+    this.loadMyPronostics();
   }
 
-  selectCompetition(code: string) {
-    if (code === this.selectedCompetition) return;
-    this.selectedCompetition = code;
-    this.competitionService.selectedCode = code;
+  ngOnChanges() {
     this.selectedJournee = null; // recalcule la journée courante de la nouvelle compétition
     this.loadMatches();
   }
 
   loadMatches() {
-    this.apiService.getAllMatches(this.selectedCompetition).subscribe({
+    if (!this.competition) {
+      return;
+    }
+    this.apiService.getAllMatches(this.competition).subscribe({
       next: (matches) => {
         this.matches = matches;
         for (const match of matches) {
@@ -202,16 +184,28 @@ export class MatchesComponent implements OnInit {
     );
   }
 
-  submitPronostic(matchId: number) {
-    const s = this.scores[matchId];
-    const a = (s?.a ?? '').toString().trim();
-    const b = (s?.b ?? '').toString().trim();
-    if (a === '' || b === '') {
-      this.toast.error('Indiquez le nombre de buts des deux équipes.');
+  /**
+   * Premier pronostic : après un chiffre dans la case domicile, on enchaîne sur
+   * la case extérieur. Si un pronostic existe déjà, on laisse l'utilisateur
+   * éditer librement (passer de 1 à 10, ou corriger le chiffre saisi).
+   */
+  onHomeInput(matchId: number, home: HTMLInputElement, away: HTMLInputElement) {
+    if (this.myPronostics[matchId]) {
       return;
     }
-    const na = Number(a);
-    const nb = Number(b);
+    if (home.value.length === 1) {
+      away.focus();
+    }
+  }
+
+  /** Enregistre dès qu'on quitte une case, si les deux sont renseignées. */
+  onScoreCommit(matchId: number) {
+    if (!this.bothScoresFilled(matchId)) {
+      return;
+    }
+    const s = this.scores[matchId];
+    const na = Number((s.a ?? '').toString().trim());
+    const nb = Number((s.b ?? '').toString().trim());
     if (!Number.isInteger(na) || !Number.isInteger(nb) || na < 0 || nb < 0) {
       this.toast.error('Score invalide.');
       return;
@@ -219,6 +213,10 @@ export class MatchesComponent implements OnInit {
 
     const existant = this.myPronostics[matchId];
     const pronostic: PronosticDTO = { pronostic: `${na}-${nb}`, match: matchId };
+    // Rien à enregistrer si le score n'a pas bougé
+    if (existant?.pronostic === pronostic.pronostic) {
+      return;
+    }
 
     const requete = existant
       ? this.apiService.updatePronostic(existant.id!, pronostic)
@@ -239,7 +237,7 @@ export class MatchesComponent implements OnInit {
   }
 
   // Les deux cases sont renseignées (0 compris — d'où le test explicite du vide, pas de la « vérité »)
-  bothScoresFilled(matchId: number): boolean {
+  private bothScoresFilled(matchId: number): boolean {
     const s = this.scores[matchId];
     return !!s && this.isFilled(s.a) && this.isFilled(s.b);
   }

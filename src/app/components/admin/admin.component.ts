@@ -73,9 +73,15 @@ export class AdminComponent implements OnInit {
     private competitionService: CompetitionService
   ) {}
 
+  // Les favoris n'existent pas sur un championnat national (spec-v1.md § 3).
+  get selectedHasFavoris(): boolean {
+    return this.competitions.find(c => c.code === this.selectedCompetition)?.hasFavoris ?? false;
+  }
+
   ngOnInit() {
     this.loadEquipes();
-    this.competitionService.list().subscribe({
+    // V1 : seule la section Championnats est administrable.
+    this.competitionService.list('CHAMPIONNAT').subscribe({
       next: (competitions) => {
         this.competitions = competitions;
         const saved = this.competitionService.selectedCode;
@@ -108,6 +114,10 @@ export class AdminComponent implements OnInit {
       next: (equipes) => this.equipesCompetition = equipes.sort((a, b) => a.name.localeCompare(b.name)),
       error: () => this.equipesCompetition = []
     });
+    // Rien à charger côté favoris pour une compétition qui n'en a pas
+    if (!this.selectedHasFavoris) {
+      return;
+    }
     this.favorisService.adminGetEditable(this.selectedCompetition).subscribe({
       next: (res) => this.favorisEditable = res.editable,
       error: () => {}

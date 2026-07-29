@@ -86,13 +86,13 @@ export class RegisterComponent {
     this.loading = true;
     this.error = '';
     this.auth.register(this.email, this.username, this.password).subscribe({
-      next: () => this.router.navigate(['/matches']),
+      next: () => this.router.navigate(['/championnats']),
       error: (err) => {
         this.loading = false;
         if (err.status === 409) {
-          this.error = err.error?.detail?.includes('utilisateur')
-            ? 'Ce nom d\'utilisateur est déjà pris.'
-            : 'Un compte existe déjà avec cet email.';
+          // Le back distingue déjà email déjà pris / pseudo déjà pris : on
+          // affiche son message plutôt que de le redeviner ici.
+          this.error = err.error?.message ?? 'Cet email ou ce nom d\'utilisateur est déjà utilisé.';
         } else if (err.status === 400) {
           this.error = 'Champs invalides : vérifiez l\'email, le nom d\'utilisateur (3-20 caractères) et le mot de passe (6 min).';
         } else {

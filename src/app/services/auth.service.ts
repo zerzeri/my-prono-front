@@ -15,7 +15,6 @@ export interface UserInfo {
   email: string;
   username: string;
   role: 'ADMIN' | 'USER';
-  passwordHash: string;
 }
 
 const STORAGE_KEY = 'myprono_auth';
