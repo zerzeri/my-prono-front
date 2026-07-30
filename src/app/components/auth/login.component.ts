@@ -15,6 +15,9 @@ import { AuthService } from '../../services/auth.service';
         <h2>Connexion</h2>
         <p class="auth-subtitle">Connectez-vous pour accéder à votre compte.</p>
 
+        <div *ngIf="expire" class="alert alert-warning">
+          Vous avez été déconnecté après une période d'inactivité.
+        </div>
         <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
 
         <form (ngSubmit)="submit()">
@@ -53,8 +56,12 @@ export class LoginComponent {
   error = '';
   loading = false;
   showPassword = false;
+  /** Renseigné par la déconnexion automatique, pour expliquer le retour ici. */
+  expire = false;
 
-  constructor(private auth: AuthService, private router: Router, private route: ActivatedRoute) {}
+  constructor(private auth: AuthService, private router: Router, private route: ActivatedRoute) {
+    this.expire = this.route.snapshot.queryParamMap.get('expire') === '1';
+  }
 
   submit() {
     if (!this.identifier || !this.password) return;
