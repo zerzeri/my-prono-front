@@ -10,12 +10,14 @@ import { Competition, CompetitionService } from '../../services/competition.serv
 import { MatchesComponent } from '../matches/matches.component';
 import { ClassementComponent } from '../classement/classement.component';
 import { FavorisComponent } from '../favoris/favoris.component';
+import { TableauFinalComponent } from '../tableau-final/tableau-final.component';
 import { libellePhase, ordonnerPhases, PHASE_LIGUE } from '../../models/phase.model';
 
 @Component({
   selector: 'app-champions-league',
   standalone: true,
-  imports: [CommonModule, MatchesComponent, ClassementComponent, FavorisComponent],
+  imports: [CommonModule, MatchesComponent, ClassementComponent, FavorisComponent,
+    TableauFinalComponent],
   template: `
     <div class="page-header">
       <h2>{{ competition?.name || 'Ligue des Champions' }}</h2>
@@ -28,6 +30,8 @@ import { libellePhase, ordonnerPhases, PHASE_LIGUE } from '../../models/phase.mo
     <div class="tabs" *ngIf="competition">
       <button type="button" class="tab-btn" [class.active]="tab === 'matchs'"
               (click)="tab = 'matchs'">⚽ Matchs</button>
+      <button type="button" class="tab-btn" [class.active]="tab === 'tableau'"
+              (click)="tab = 'tableau'">🏆 Tableau final</button>
       <button type="button" class="tab-btn" [class.active]="tab === 'classement'"
               (click)="tab = 'classement'">📊 Phase de ligue</button>
     </div>
@@ -56,6 +60,9 @@ import { libellePhase, ordonnerPhases, PHASE_LIGUE } from '../../models/phase.mo
                    [competition]="competition.code"
                    [phase]="selectedPhase"></app-matches>
     </ng-container>
+
+    <app-tableau-final *ngIf="tab === 'tableau' && competition"
+                       [competition]="competition.code"></app-tableau-final>
 
     <app-classement *ngIf="tab === 'classement' && competition"
                     [competition]="competition.code"></app-classement>
@@ -131,7 +138,7 @@ export class ChampionsLeagueComponent implements OnInit {
   competition: Competition | null = null;
   phases: string[] = [];
   selectedPhase = '';
-  tab: 'matchs' | 'classement' = 'matchs';
+  tab: 'matchs' | 'tableau' | 'classement' = 'matchs';
   loading = true;
 
   constructor(
