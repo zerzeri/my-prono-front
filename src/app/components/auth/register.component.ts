@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { messageErreur } from '../../services/http-error';
 
 @Component({
   selector: 'app-register',
@@ -89,15 +90,13 @@ export class RegisterComponent {
       next: () => this.router.navigate(['/championnats']),
       error: (err) => {
         this.loading = false;
-        if (err.status === 409) {
-          // Le back distingue déjà email déjà pris / pseudo déjà pris : on
-          // affiche son message plutôt que de le redeviner ici.
-          this.error = err.error?.message ?? 'Cet email ou ce nom d\'utilisateur est déjà utilisé.';
-        } else if (err.status === 400) {
-          this.error = 'Champs invalides : vérifiez l\'email, le nom d\'utilisateur (3-20 caractères) et le mot de passe (6 min).';
-        } else {
-          this.error = 'Erreur lors de la création du compte.';
-        }
+        // Le back sait précisément ce qui cloche (champ fautif, conflit) :
+        // on relaie son diagnostic au lieu d'un message générique.
+        this.error = messageErreur(err, 'Erreur lors de la création du compte.', {
+          email: 'Email',
+          username: 'Nom d\'utilisateur',
+          password: 'Mot de passe'
+        });
       }
     });
   }

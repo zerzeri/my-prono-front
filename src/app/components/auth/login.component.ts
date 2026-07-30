@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { messageErreur } from '../../services/http-error';
 
 @Component({
   selector: 'app-login',
@@ -68,10 +69,14 @@ export class LoginComponent {
     this.loading = true;
     this.error = '';
     this.auth.login(this.identifier, this.password).subscribe({
-      next: () => this.router.navigateByUrl(this.route.snapshot.queryParamMap.get('returnUrl') ?? '/matches'),
+      next: () => this.router.navigateByUrl(this.route.snapshot.queryParamMap.get('returnUrl') ?? '/championnats'),
       error: (err) => {
         this.loading = false;
-        this.error = err.status === 401 ? 'Identifiant ou mot de passe incorrect.' : 'Erreur lors de la connexion.';
+        // Le 401 garde un message volontairement vague, pour ne pas révéler
+        // si le compte existe. Le reste est diagnostiqué finement.
+        this.error = err.status === 401
+          ? 'Identifiant ou mot de passe incorrect.'
+          : messageErreur(err, 'Erreur lors de la connexion.');
       }
     });
   }
