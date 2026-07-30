@@ -10,4 +10,5 @@ export interface MatchDTO {
   resultat?: string;
   competition?: string;
   journee?: number;
+  phase?: string;
 }

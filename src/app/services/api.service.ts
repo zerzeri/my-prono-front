@@ -18,6 +18,8 @@ export interface MatchDTO {
   dateMatch: string; // Format ISO string pour les échanges avec l'API
   competition?: string;
   journee?: number;
+  // Phase de la compétition : REGULAR_SEASON, LEAGUE_STAGE, LAST_16, FINAL…
+  phase?: string;
 }
 
 export interface PronosticDTO {

@@ -11,6 +11,21 @@ import { ToastService } from '../../services/toast.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
+    <!--
+      En cas d'échec de chargement, on affiche un message : masquer le bloc
+      sans rien dire avait laissé passer inaperçue une panne de production
+      (spec.txt § 15.3).
+    -->
+    <div class="card favoris-card" *ngIf="erreur">
+      <div class="favoris-head">
+        <h3>🏆 Vos favoris</h3>
+      </div>
+      <p class="favoris-hint">
+        Favoris indisponibles pour le moment. Réessayez plus tard — si le problème
+        persiste, signalez-le à l'administrateur.
+      </p>
+    </div>
+
     <div class="card favoris-card" *ngIf="favoris">
       <div class="favoris-head">
         <h3>🏆 Vos favoris{{ competitionName ? ' — ' + competitionName : '' }}</h3>
@@ -139,6 +154,7 @@ export class FavorisComponent implements OnChanges {
   @Input() competitionName = '';
 
   favoris: Favoris | null = null;
+  erreur = false;
   equipes: EquipeDTO[] = [];
   champion = '';
   meilleurButeur = '';
@@ -157,6 +173,7 @@ export class FavorisComponent implements OnChanges {
     }
     this.favorisService.getMine(this.competition).subscribe({
       next: (favoris) => {
+        this.erreur = false;
         this.favoris = favoris;
         this.champion = favoris.champion ?? '';
         this.meilleurButeur = favoris.meilleurButeur ?? '';
@@ -170,6 +187,8 @@ export class FavorisComponent implements OnChanges {
       },
       error: (error) => {
         console.error('Erreur lors du chargement des favoris:', error);
+        this.favoris = null;
+        this.erreur = true;
       }
     });
   }

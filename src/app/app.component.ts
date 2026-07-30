@@ -23,6 +23,7 @@ import { ToastComponent } from './components/toast/toast.component';
         -->
         <nav class="nav">
           <a routerLink="/championnats" routerLinkActive="active" class="nav-link">Championnats</a>
+          <a *ngIf="auth.user$ | async" routerLink="/champions-league" routerLinkActive="active" class="nav-link">Ligue des Champions</a>
           <a *ngIf="auth.user$ | async" routerLink="/ligues" routerLinkActive="active" class="nav-link">Ligues</a>
           <a *ngIf="(auth.user$ | async)?.role === 'ADMIN'" routerLink="/admin" routerLinkActive="active" class="nav-link">Administration</a>
         </nav>

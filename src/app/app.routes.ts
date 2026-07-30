@@ -14,6 +14,12 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./components/championnats/championnats.component').then(m => m.ChampionnatsComponent)
   },
+  // Rubrique Ligue des Champions : phase de ligue puis tours à élimination directe
+  {
+    path: 'champions-league',
+    canActivate: [authGuard],
+    loadComponent: () => import('./components/champions-league/champions-league.component').then(m => m.ChampionsLeagueComponent)
+  },
   // Anciennes adresses, conservées pour les liens déjà partagés
   {
     path: 'matches',

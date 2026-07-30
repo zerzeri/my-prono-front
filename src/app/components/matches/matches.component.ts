@@ -1,10 +1,11 @@
-import { Component, Input, OnChanges, OnInit } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ApiService, MatchDTO, PronosticDTO } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
+import { estPhaseFinale } from '../../models/phase.model';
 
 @Component({
   selector: 'app-matches',
@@ -16,6 +17,15 @@ import { ToastService } from '../../services/toast.service';
 export class MatchesComponent implements OnInit, OnChanges {
   /** Compétition à afficher, fournie par la rubrique parente. */
   @Input() competition!: string;
+
+  /**
+   * Phase à afficher (LEAGUE_STAGE, LAST_16…). Laissée vide pour un championnat,
+   * qui n'a qu'une phase : tous les matchs sont alors affichés.
+   */
+  @Input() phase?: string;
+
+  /** Tous les matchs de la compétition, avant filtrage par phase. */
+  private toutes: MatchDTO[] = [];
 
   matches: MatchDTO[] = [];
   filteredMatches: MatchDTO[] = [];
@@ -49,9 +59,13 @@ export class MatchesComponent implements OnInit, OnChanges {
     this.loadMyPronostics();
   }
 
-  ngOnChanges() {
-    this.selectedJournee = null; // recalcule la journée courante de la nouvelle compétition
-    this.loadMatches();
+  ngOnChanges(changes: SimpleChanges) {
+    // Changer de phase ne nécessite pas de rappeler l'API : on refiltre sur place.
+    if (changes['competition'] || this.toutes.length === 0) {
+      this.loadMatches();
+    } else if (changes['phase']) {
+      this.appliquerPhase();
+    }
   }
 
   loadMatches() {
@@ -60,14 +74,13 @@ export class MatchesComponent implements OnInit, OnChanges {
     }
     this.apiService.getAllMatches(this.competition).subscribe({
       next: (matches) => {
-        this.matches = matches;
+        this.toutes = matches;
         for (const match of matches) {
           if (match.id != null && !this.scores[match.id]) {
             this.scores[match.id] = { a: '', b: '' };
           }
         }
-        this.computeJournees();
-        this.applyFilter();
+        this.appliquerPhase();
       },
       error: (error) => {
         console.error('Erreur lors du chargement des matchs:', error);
@@ -95,6 +108,27 @@ export class MatchesComponent implements OnInit, OnChanges {
         console.error('Erreur lors du chargement de mes pronostics:', error);
       }
     });
+  }
+
+  /** Restreint l'affichage à la phase demandée et recalcule la navigation. */
+  private appliquerPhase() {
+    this.matches = this.phase
+      ? this.toutes.filter(m => m.phase === this.phase)
+      : this.toutes;
+    this.selectedJournee = null; // la journée courante se recalcule dans la nouvelle phase
+    this.computeJournees();
+    this.applyFilter();
+  }
+
+  /**
+   * Sur un tour à élimination directe, la « journée » désigne le match aller
+   * ou retour ; ailleurs c'est la journée de championnat.
+   */
+  libelleJournee(j: number): string {
+    if (!estPhaseFinale(this.phase)) {
+      return `Journée ${j}`;
+    }
+    return j === 1 ? 'Aller' : 'Retour';
   }
 
   private computeJournees() {
