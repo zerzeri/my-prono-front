@@ -20,6 +20,12 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./components/champions-league/champions-league.component').then(m => m.ChampionsLeagueComponent)
   },
+  // Rubrique Coupes internationales : poules puis tableau final
+  {
+    path: 'coupes',
+    canActivate: [authGuard],
+    loadComponent: () => import('./components/coupes/coupes.component').then(m => m.CoupesComponent)
+  },
   // Anciennes adresses, conservées pour les liens déjà partagés
   {
     path: 'matches',

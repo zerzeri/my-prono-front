@@ -25,6 +25,7 @@ import { ToastComponent } from './components/toast/toast.component';
         <nav class="nav">
           <a routerLink="/championnats" routerLinkActive="active" class="nav-link">Championnats</a>
           <a *ngIf="auth.user$ | async" routerLink="/champions-league" routerLinkActive="active" class="nav-link">Ligue des Champions</a>
+          <a *ngIf="auth.user$ | async" routerLink="/coupes" routerLinkActive="active" class="nav-link">Coupes</a>
           <a *ngIf="auth.user$ | async" routerLink="/ligues" routerLinkActive="active" class="nav-link">Ligues</a>
           <a *ngIf="(auth.user$ | async)?.role === 'ADMIN'" routerLink="/admin" routerLinkActive="active" class="nav-link">Administration</a>
         </nav>
@@ -120,7 +121,15 @@ import { ToastComponent } from './components/toast/toast.component';
       height: 64px;
       display: flex;
       align-items: center;
-      gap: 2rem;
+      /* Écart resserré sur mobile : 2rem de part et d'autre de la navigation
+         coûtaient à eux seuls un sixième de la largeur d'écran. */
+      gap: 0.75rem;
+    }
+
+    @media (min-width: 700px) {
+      .header-inner {
+        gap: 2rem;
+      }
     }
 
     .brand {
@@ -147,10 +156,25 @@ import { ToastComponent } from './components/toast/toast.component';
       color: #34d399;
     }
 
+    /*
+      Cinq rubriques ne tiennent pas sur 375 px. Plutôt que de tronquer les
+      libellés ou de faire déborder la page, la barre défile horizontalement —
+      même parti pris que les sélecteurs de phase et de groupe.
+      min-width: 0 est indispensable : sans lui, un conteneur flex refuse de
+      passer sous la largeur de son contenu et pousse le menu hors de l'écran.
+    */
     .nav {
       display: flex;
       gap: 0.25rem;
       flex: 1;
+      min-width: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .nav::-webkit-scrollbar {
+      display: none;
     }
 
     .nav-link {
@@ -158,6 +182,8 @@ import { ToastComponent } from './components/toast/toast.component';
       text-decoration: none;
       font-size: 0.9rem;
       font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
       padding: 0.5rem 0.9rem;
       border-radius: 8px;
       transition: color 0.15s ease, background-color 0.15s ease;

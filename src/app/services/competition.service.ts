@@ -29,6 +29,13 @@ export interface ClassementLigne {
   points: number;
 }
 
+/** Classement d'un groupe de poule, calculé par le back à partir des matchs. */
+export interface Poule {
+  groupe: string;
+  libelle: string;
+  classement: ClassementLigne[];
+}
+
 const SELECTED_KEY = 'myprono_competition';
 
 @Injectable({ providedIn: 'root' })
@@ -54,6 +61,11 @@ export class CompetitionService {
 
   classement(code: string): Observable<ClassementLigne[]> {
     return this.http.get<ClassementLigne[]>(`${this.baseUrl}/competitions/${code}/classement`);
+  }
+
+  /** Classements des poules (coupes internationales). */
+  poules(code: string): Observable<Poule[]> {
+    return this.http.get<Poule[]>(`${this.baseUrl}/competitions/${code}/poules`);
   }
 
   /** Compétition sélectionnée par l'utilisateur (partagée entre Matchs et Favoris). */

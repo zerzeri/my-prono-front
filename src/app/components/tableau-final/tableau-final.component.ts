@@ -12,7 +12,7 @@
 import { Component, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService, MatchDTO } from '../../services/api.service';
-import { estPhaseFinale, libellePhase, ordonnerPhases } from '../../models/phase.model';
+import { estPhaseFinale, libellePhase, ordonnerPhases, PHASE_PETITE_FINALE } from '../../models/phase.model';
 
 interface Confrontation {
   equipe1: string;
@@ -184,14 +184,20 @@ export class TableauFinalComponent implements OnChanges {
       equipesParPhase.set(phase, equipes);
     }
 
-    return phases.map((phase, i) => ({
-      phase,
-      libelle: libellePhase(phase),
-      confrontations: this.construireConfrontations(
-        finales.filter(m => m.phase === phase),
-        equipesParPhase.get(phases[i + 1])
-      )
-    }));
+    return phases.map((phase, i) => {
+      // Le tour suivant sert à identifier les qualifiés. La petite finale n'en
+      // est pas un : elle réunit les perdants des demies, et s'y fier
+      // désignerait vainqueur l'équipe qui vient d'être éliminée.
+      const progression = phases.slice(i + 1).find(p => p !== PHASE_PETITE_FINALE);
+      return {
+        phase,
+        libelle: libellePhase(phase),
+        confrontations: this.construireConfrontations(
+          finales.filter(m => m.phase === phase),
+          progression ? equipesParPhase.get(progression) : undefined
+        )
+      };
+    });
   }
 
   /** Regroupe les manches d'une même affiche et cumule les buts. */
@@ -249,21 +255,25 @@ export class TableauFinalComponent implements OnChanges {
   }
 
   /**
-   * Le qualifié est celui que l'on retrouve au tour suivant. Pour le dernier
-   * tour (la finale), on se rabat sur le score s'il départage. Rien n'est
-   * deviné : une confrontation nulle sans tour suivant reste sans vainqueur
-   * affiché, faute de connaître les tirs au but.
+   * Le qualifié est celui que l'on retrouve au tour suivant : c'est la source la
+   * plus sûre, puisqu'un cumul nul se départage aux tirs au but, information que
+   * nous ne stockons pas.
+   *
+   * Ce raisonnement ne vaut que si le tour suivant découle bien de celui-ci.
+   * Ce n'est pas le cas de la petite finale, dont le « tour suivant » est la
+   * finale : aucun de ses deux participants n'y figure. On se rabat alors sur le
+   * score — comme pour la finale elle-même, qui n'a pas de tour suivant.
+   *
+   * Rien n'est deviné : à égalité et sans indication, aucun vainqueur n'est
+   * affiché.
    */
   private determinerQualifie(equipe1: string, equipe2: string, buts1: number | null,
       buts2: number | null, tourSuivant?: Set<string>): string | null {
-    if (tourSuivant) {
-      if (tourSuivant.has(equipe1)) {
-        return equipe1;
-      }
-      if (tourSuivant.has(equipe2)) {
-        return equipe2;
-      }
-      return null;
+    if (tourSuivant?.has(equipe1)) {
+      return equipe1;
+    }
+    if (tourSuivant?.has(equipe2)) {
+      return equipe2;
     }
     if (buts1 === null || buts2 === null || buts1 === buts2) {
       return null;

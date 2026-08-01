@@ -13,6 +13,13 @@ export const PHASE_LIGUE = 'LEAGUE_STAGE';
 /** Première phase des coupes internationales : poules. */
 export const PHASE_POULES = 'GROUP_STAGE';
 
+/**
+ * Match pour la troisième place. Ce n'est pas une étape de la progression :
+ * il oppose les perdants des demi-finales. En déduire une qualification
+ * reviendrait à désigner vainqueur celui qui vient d'être éliminé.
+ */
+export const PHASE_PETITE_FINALE = 'THIRD_PLACE';
+
 /** Libellés affichés, dans l'ordre de déroulement de la compétition. */
 export const LIBELLES_PHASES: { code: string; libelle: string }[] = [
   { code: PHASE_LIGUE, libelle: 'Phase de ligue' },
