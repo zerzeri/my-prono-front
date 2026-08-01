@@ -10,13 +10,20 @@ export const PHASE_CHAMPIONNAT = 'REGULAR_SEASON';
 /** Première phase de la Ligue des Champions : classement unique, 8 journées. */
 export const PHASE_LIGUE = 'LEAGUE_STAGE';
 
+/** Première phase des coupes internationales : poules. */
+export const PHASE_POULES = 'GROUP_STAGE';
+
 /** Libellés affichés, dans l'ordre de déroulement de la compétition. */
 export const LIBELLES_PHASES: { code: string; libelle: string }[] = [
   { code: PHASE_LIGUE, libelle: 'Phase de ligue' },
+  { code: PHASE_POULES, libelle: 'Phase de poules' },
   { code: 'PLAYOFFS', libelle: 'Barrages' },
+  { code: 'LAST_32', libelle: '16es de finale' },
   { code: 'LAST_16', libelle: '8es de finale' },
   { code: 'QUARTER_FINALS', libelle: 'Quarts' },
   { code: 'SEMI_FINALS', libelle: 'Demies' },
+  // La petite finale se joue la veille de la finale : elle la précède ici
+  { code: 'THIRD_PLACE', libelle: 'Petite finale' },
   { code: 'FINAL', libelle: 'Finale' }
 ];
 
@@ -24,9 +31,9 @@ export function libellePhase(code: string): string {
   return LIBELLES_PHASES.find(p => p.code === code)?.libelle ?? code;
 }
 
-/** Vrai pour un tour à élimination directe (barrages compris). */
+/** Vrai pour un tour à élimination directe (barrages et petite finale compris). */
 export function estPhaseFinale(code: string | undefined | null): boolean {
-  return !!code && code !== PHASE_LIGUE && code !== PHASE_CHAMPIONNAT;
+  return !!code && code !== PHASE_LIGUE && code !== PHASE_POULES && code !== PHASE_CHAMPIONNAT;
 }
 
 /**

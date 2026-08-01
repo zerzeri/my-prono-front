@@ -11,4 +11,5 @@ export interface MatchDTO {
   competition?: string;
   journee?: number;
   phase?: string;
+  groupe?: string;
 }
