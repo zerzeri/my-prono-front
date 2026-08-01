@@ -24,9 +24,6 @@ import { libellePhase, ordonnerPhases, PHASE_LIGUE } from '../../models/phase.mo
       <p class="subtitle">Phase de ligue puis tableau final.</p>
     </div>
 
-    <app-favoris *ngIf="competition" [competition]="competition.code"
-                 [competitionName]="competition.name"></app-favoris>
-
     <div class="tabs" *ngIf="competition">
       <button type="button" class="tab-btn" [class.active]="tab === 'matchs'"
               (click)="tab = 'matchs'">⚽ Matchs</button>
@@ -34,6 +31,8 @@ import { libellePhase, ordonnerPhases, PHASE_LIGUE } from '../../models/phase.mo
               (click)="tab = 'tableau'">🏆 Tableau final</button>
       <button type="button" class="tab-btn" [class.active]="tab === 'classement'"
               (click)="tab = 'classement'">📊 Phase de ligue</button>
+      <button type="button" class="tab-btn" [class.active]="tab === 'favoris'"
+              (click)="tab = 'favoris'" *ngIf="competition.hasFavoris">⭐ Favoris</button>
     </div>
 
     <ng-container *ngIf="tab === 'matchs' && competition">
@@ -67,19 +66,33 @@ import { libellePhase, ordonnerPhases, PHASE_LIGUE } from '../../models/phase.mo
 
     <app-classement *ngIf="tab === 'classement' && competition"
                     [competition]="competition.code"></app-classement>
+
+    <app-favoris *ngIf="tab === 'favoris' && competition"
+                 [competition]="competition.code"
+                 [competitionName]="competition.name"></app-favoris>
   `,
   styles: [`
+    /* Quatre onglets ne tiennent pas sur 375 px : défilement plutôt que débordement */
     .tabs {
       display: flex;
       gap: 0.5rem;
       border-bottom: 1px solid var(--border);
       margin-bottom: 1.25rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tabs::-webkit-scrollbar {
+      display: none;
     }
 
     .tab-btn {
       font-family: inherit;
       font-size: 0.9rem;
       font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
       color: var(--text-2);
       background: none;
       border: none;
@@ -139,7 +152,7 @@ export class ChampionsLeagueComponent implements OnInit {
   competition: Competition | null = null;
   phases: string[] = [];
   selectedPhase = '';
-  tab: 'matchs' | 'tableau' | 'classement' = 'matchs';
+  tab: 'matchs' | 'tableau' | 'classement' | 'favoris' = 'matchs';
   loading = true;
 
   constructor(
