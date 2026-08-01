@@ -42,88 +42,125 @@ interface Tour {
       <p>Le tableau final n'est pas encore établi. Il se remplira au fil des qualifications.</p>
     </div>
 
-    <div class="tour" *ngFor="let tour of tours">
-      <h3 class="tour-titre">{{ tour.libelle }}</h3>
+    <p class="aide" *ngIf="!loading && tours.length > 1">
+      Faites défiler horizontalement pour suivre le parcours jusqu'à la finale.
+    </p>
 
-      <div class="confrontation card" *ngFor="let c of tour.confrontations">
-        <div class="duel">
-          <span class="equipe" [class.qualifie]="c.qualifie === c.equipe1">{{ c.equipe1 }}</span>
-          <span class="cumul" *ngIf="c.buts1 !== null">{{ c.buts1 }} – {{ c.buts2 }}</span>
-          <span class="cumul a-venir" *ngIf="c.buts1 === null">vs</span>
-          <span class="equipe" [class.qualifie]="c.qualifie === c.equipe2">{{ c.equipe2 }}</span>
+    <div class="arbre" *ngIf="!loading && tours.length > 0">
+      <div class="tour" *ngFor="let tour of tours">
+        <div class="tour-entete">{{ tour.libelle }}</div>
+
+        <!-- space-around répartit les confrontations : chaque tour compte
+             moitié moins d'affiches que le précédent, ce qui aligne
+             naturellement un vainqueur en face de ses deux prétendants. -->
+        <div class="tour-corps">
+          <div class="duel" *ngFor="let c of tour.confrontations"
+               [title]="infobulle(c)">
+            <div class="ligne" [class.qualifie]="c.qualifie === c.equipe1">
+              <span class="nom">{{ c.equipe1 }}</span>
+              <span class="but">{{ c.buts1 === null ? '–' : c.buts1 }}</span>
+            </div>
+            <div class="ligne" [class.qualifie]="c.qualifie === c.equipe2">
+              <span class="nom">{{ c.equipe2 }}</span>
+              <span class="but">{{ c.buts2 === null ? '–' : c.buts2 }}</span>
+            </div>
+          </div>
         </div>
-        <p class="detail" *ngIf="detail(c) as texte">{{ texte }}</p>
       </div>
     </div>
   `,
   styles: [`
-    .tour {
-      margin-bottom: 1.5rem;
+    .aide {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
     }
 
-    .tour-titre {
-      font-size: 0.95rem;
-      color: var(--text-2);
+    /*
+      Un arbre de tournoi est horizontal par nature : cinq tours pour un
+      Mondial. Sur 375 px, on assume le défilement latéral plutôt que de
+      compresser des colonnes illisibles — la lecture se fait de gauche à
+      droite, en suivant son équipe.
+    */
+    .arbre {
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      align-items: stretch;
+      padding-bottom: 0.5rem;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tour {
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      width: 10.5rem;
+    }
+
+    .tour-entete {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      text-align: center;
+      padding-bottom: 0.4rem;
       margin-bottom: 0.6rem;
-      padding-bottom: 0.35rem;
       border-bottom: 1px solid var(--border);
     }
 
-    .confrontation {
-      padding: 0.8rem 0.9rem;
-      margin-bottom: 0.6rem;
+    /* Le cœur de l'effet d'arbre : chaque tour ayant moitié moins d'affiches,
+       la répartition régulière place le vainqueur face à ses prétendants. */
+    .tour-corps {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      gap: 0.4rem;
     }
 
     .duel {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      align-items: center;
-      gap: 0.6rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      flex-shrink: 0;
     }
 
-    .equipe {
-      font-size: 0.92rem;
-      font-weight: 600;
-      text-align: center;
-      overflow-wrap: anywhere;
+    .ligne {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.4rem;
+      padding: 0.4rem 0.55rem;
+      font-size: 0.8rem;
       color: var(--text-2);
     }
 
-    /* Le qualifié se distingue du perdant : c'est l'information principale */
-    .equipe.qualifie {
-      color: var(--text);
-      font-weight: 800;
+    .ligne + .ligne {
+      border-top: 1px solid var(--border);
     }
 
-    .cumul {
-      font-size: 1rem;
+    /* Le qualifié est l'information principale : il se lit d'un coup d'œil */
+    .ligne.qualifie {
+      color: var(--text);
       font-weight: 800;
-      color: var(--success);
       background: var(--success-soft);
-      border-radius: var(--radius-sm);
-      padding: 0.25rem 0.6rem;
+    }
+
+    /* Nom tronqué plutôt que replié : des lignes de hauteur égale sont
+       indispensables à l'alignement des tours entre eux. */
+    .nom {
+      overflow: hidden;
+      text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    .cumul.a-venir {
-      font-size: 0.7rem;
-      font-weight: 700;
-      color: var(--muted);
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      letter-spacing: 0.05em;
-    }
-
-    .detail {
-      font-size: 0.75rem;
-      color: var(--muted);
-      text-align: center;
-      margin-top: 0.5rem;
-    }
-
-    .detail:empty {
-      display: none;
+    .but {
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
     }
   `]
 })
@@ -153,18 +190,21 @@ export class TableauFinalComponent implements OnChanges {
     });
   }
 
-  /** Ligne d'information sous la confrontation ; vide si rien à signaler. */
-  detail(c: Confrontation): string {
-    const parties: string[] = [];
+  /**
+   * Infobulle de la confrontation. Les noms y figurent en entier : ils sont
+   * tronqués dans l'arbre pour garder des lignes de hauteur égale.
+   */
+  infobulle(c: Confrontation): string {
+    const parties: string[] = [`${c.equipe1} – ${c.equipe2}`];
     if (c.manches > 1) {
-      parties.push('Cumul aller-retour');
+      parties.push('cumul aller-retour');
     }
     if (c.buts1 === null) {
       parties.push(this.formatDate(c.date));
     } else if (!c.qualifie) {
       // Cumul à égalité : le vainqueur s'est joué aux prolongations ou aux
       // tirs au but, que nous ne stockons pas. On l'annonce plutôt que de deviner.
-      parties.push('Qualifié départagé hors score');
+      parties.push('qualifié départagé hors score');
     }
     return parties.join(' · ');
   }
@@ -184,7 +224,10 @@ export class TableauFinalComponent implements OnChanges {
       equipesParPhase.set(phase, equipes);
     }
 
-    return phases.map((phase, i) => {
+    // La petite finale ne figure pas dans l'arbre : elle n'appartient pas à la
+    // progression vers le titre. Elle reste consultable dans l'onglet Matchs.
+    const tours = phases.filter(p => p !== PHASE_PETITE_FINALE).map((phase) => {
+      const i = phases.indexOf(phase);
       // Le tour suivant sert à identifier les qualifiés. La petite finale n'en
       // est pas un : elle réunit les perdants des demies, et s'y fier
       // désignerait vainqueur l'équipe qui vient d'être éliminée.
@@ -198,6 +241,40 @@ export class TableauFinalComponent implements OnChanges {
         )
       };
     });
+
+    return this.ordonnerEnArbre(tours);
+  }
+
+  /**
+   * Réordonne chaque tour pour que les deux affiches menant à une même
+   * confrontation soient voisines.
+   *
+   * Sans cela, les affiches suivent l'ordre des dates : l'arbre alignerait des
+   * rencontres sans lien entre elles, suggérant des enchaînements qui n'existent
+   * pas. On remonte donc depuis la finale, chaque confrontation rappelant à elle
+   * les deux affiches dont elle est issue.
+   *
+   * Les affiches sans suite identifiable (tour non encore joué) sont conservées
+   * à la fin, dans leur ordre d'origine : mieux vaut un arbre incomplet qu'une
+   * rencontre disparue.
+   */
+  private ordonnerEnArbre(tours: Tour[]): Tour[] {
+    for (let i = tours.length - 2; i >= 0; i--) {
+      const suivant = tours[i + 1].confrontations;
+      const restantes = [...tours[i].confrontations];
+      const ordonnees: Confrontation[] = [];
+
+      for (const aval of suivant) {
+        for (const equipe of [aval.equipe1, aval.equipe2]) {
+          const index = restantes.findIndex(c => c.qualifie === equipe);
+          if (index !== -1) {
+            ordonnees.push(...restantes.splice(index, 1));
+          }
+        }
+      }
+      tours[i].confrontations = [...ordonnees, ...restantes];
+    }
+    return tours;
   }
 
   /** Regroupe les manches d'une même affiche et cumule les buts. */
