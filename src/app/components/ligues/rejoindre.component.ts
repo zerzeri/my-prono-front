@@ -24,7 +24,7 @@ import { LigueDTO, LigueService } from '../../services/ligue.service';
 
         <div class="auth-links">
           <a routerLink="/ligues">Voir mes ligues</a>
-          <a routerLink="/matches">Aller aux matchs</a>
+          <a routerLink="/championnats">Aller aux championnats</a>
         </div>
       </div>
     </div>

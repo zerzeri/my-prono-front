@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+// createur et membres portent des pseudos (le back n'expose pas les emails).
 export interface LigueDTO {
   id: number;
   name: string;
@@ -13,12 +14,14 @@ export interface LigueDTO {
 }
 
 export interface ClassementEntry {
-  email: string;
+  username: string;
   points: number;
   bonsResultats: number;
   scoresExacts: number;
   pronostics: number;
   favorisTrouves: number;
+  /** Vrai pour la ligne du joueur connecté (déterminé côté serveur). */
+  moi: boolean;
 }
 
 @Injectable({

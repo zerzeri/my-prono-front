@@ -1,21 +1,35 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ApiService, MatchDTO, PronosticDTO } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
-import { Competition, CompetitionService } from '../../services/competition.service';
-import { FavorisComponent } from '../favoris/favoris.component';
+import { estPhaseFinale } from '../../models/phase.model';
 
 @Component({
   selector: 'app-matches',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, FavorisComponent],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './matches.component.html',
   styleUrl: './matches.component.css'
 })
-export class MatchesComponent implements OnInit {
+export class MatchesComponent implements OnInit, OnChanges {
+  /** Compétition à afficher, fournie par la rubrique parente. */
+  @Input() competition!: string;
+
+  /**
+   * Phase à afficher (LEAGUE_STAGE, LAST_16…). Laissée vide pour un championnat,
+   * qui n'a qu'une phase : tous les matchs sont alors affichés.
+   */
+  @Input() phase?: string;
+
+  /** Compétition archivée : les matchs restent visibles, la saisie disparaît. */
+  @Input() cloturee = false;
+
+  /** Tous les matchs de la compétition, avant filtrage par phase. */
+  private toutes: MatchDTO[] = [];
+
   matches: MatchDTO[] = [];
   filteredMatches: MatchDTO[] = [];
   myPronostics: { [matchId: number]: PronosticDTO } = {};
@@ -30,10 +44,7 @@ export class MatchesComponent implements OnInit {
     { value: 'finished', label: 'Terminés' }
   ];
 
-  competitions: Competition[] = [];
-  selectedCompetition = '';
-
-  // Navigation par journée (championnats). Vide pour la Coupe du Monde.
+  // Navigation par journée (championnats). Vide pour les compétitions sans journée.
   journees: number[] = [];
   selectedJournee: number | null = null;
 
@@ -41,51 +52,38 @@ export class MatchesComponent implements OnInit {
     return this.journees.length > 0;
   }
 
-  get selectedCompetitionName(): string {
-    return this.competitions.find(c => c.code === this.selectedCompetition)?.name ?? '';
-  }
-
   constructor(
     private apiService: ApiService,
     public auth: AuthService,
-    private toast: ToastService,
-    private competitionService: CompetitionService
+    private toast: ToastService
   ) {}
 
   ngOnInit() {
-    this.competitionService.list().subscribe({
-      next: (competitions) => {
-        this.competitions = competitions;
-        const saved = this.competitionService.selectedCode;
-        this.selectedCompetition = competitions.some(c => c.code === saved)
-          ? saved!
-          : (competitions[0]?.code ?? '');
-        this.loadMatches();
-        this.loadMyPronostics();
-      },
-      error: (error) => console.error('Erreur lors du chargement des compétitions:', error)
-    });
+    this.loadMyPronostics();
   }
 
-  selectCompetition(code: string) {
-    if (code === this.selectedCompetition) return;
-    this.selectedCompetition = code;
-    this.competitionService.selectedCode = code;
-    this.selectedJournee = null; // recalcule la journée courante de la nouvelle compétition
-    this.loadMatches();
+  ngOnChanges(changes: SimpleChanges) {
+    // Changer de phase ne nécessite pas de rappeler l'API : on refiltre sur place.
+    if (changes['competition'] || this.toutes.length === 0) {
+      this.loadMatches();
+    } else if (changes['phase']) {
+      this.appliquerPhase();
+    }
   }
 
   loadMatches() {
-    this.apiService.getAllMatches(this.selectedCompetition).subscribe({
+    if (!this.competition) {
+      return;
+    }
+    this.apiService.getAllMatches(this.competition).subscribe({
       next: (matches) => {
-        this.matches = matches;
+        this.toutes = matches;
         for (const match of matches) {
           if (match.id != null && !this.scores[match.id]) {
             this.scores[match.id] = { a: '', b: '' };
           }
         }
-        this.computeJournees();
-        this.applyFilter();
+        this.appliquerPhase();
       },
       error: (error) => {
         console.error('Erreur lors du chargement des matchs:', error);
@@ -113,6 +111,27 @@ export class MatchesComponent implements OnInit {
         console.error('Erreur lors du chargement de mes pronostics:', error);
       }
     });
+  }
+
+  /** Restreint l'affichage à la phase demandée et recalcule la navigation. */
+  private appliquerPhase() {
+    this.matches = this.phase
+      ? this.toutes.filter(m => m.phase === this.phase)
+      : this.toutes;
+    this.selectedJournee = null; // la journée courante se recalcule dans la nouvelle phase
+    this.computeJournees();
+    this.applyFilter();
+  }
+
+  /**
+   * Sur un tour à élimination directe, la « journée » désigne le match aller
+   * ou retour ; ailleurs c'est la journée de championnat.
+   */
+  libelleJournee(j: number): string {
+    if (!estPhaseFinale(this.phase)) {
+      return `Journée ${j}`;
+    }
+    return j === 1 ? 'Aller' : 'Retour';
   }
 
   private computeJournees() {
@@ -202,16 +221,28 @@ export class MatchesComponent implements OnInit {
     );
   }
 
-  submitPronostic(matchId: number) {
-    const s = this.scores[matchId];
-    const a = (s?.a ?? '').toString().trim();
-    const b = (s?.b ?? '').toString().trim();
-    if (a === '' || b === '') {
-      this.toast.error('Indiquez le nombre de buts des deux équipes.');
+  /**
+   * Premier pronostic : après un chiffre dans la case domicile, on enchaîne sur
+   * la case extérieur. Si un pronostic existe déjà, on laisse l'utilisateur
+   * éditer librement (passer de 1 à 10, ou corriger le chiffre saisi).
+   */
+  onHomeInput(matchId: number, home: HTMLInputElement, away: HTMLInputElement) {
+    if (this.myPronostics[matchId]) {
       return;
     }
-    const na = Number(a);
-    const nb = Number(b);
+    if (home.value.length === 1) {
+      away.focus();
+    }
+  }
+
+  /** Enregistre dès qu'on quitte une case, si les deux sont renseignées. */
+  onScoreCommit(matchId: number) {
+    if (!this.bothScoresFilled(matchId)) {
+      return;
+    }
+    const s = this.scores[matchId];
+    const na = Number((s.a ?? '').toString().trim());
+    const nb = Number((s.b ?? '').toString().trim());
     if (!Number.isInteger(na) || !Number.isInteger(nb) || na < 0 || nb < 0) {
       this.toast.error('Score invalide.');
       return;
@@ -219,6 +250,10 @@ export class MatchesComponent implements OnInit {
 
     const existant = this.myPronostics[matchId];
     const pronostic: PronosticDTO = { pronostic: `${na}-${nb}`, match: matchId };
+    // Rien à enregistrer si le score n'a pas bougé
+    if (existant?.pronostic === pronostic.pronostic) {
+      return;
+    }
 
     const requete = existant
       ? this.apiService.updatePronostic(existant.id!, pronostic)
@@ -239,7 +274,7 @@ export class MatchesComponent implements OnInit {
   }
 
   // Les deux cases sont renseignées (0 compris — d'où le test explicite du vide, pas de la « vérité »)
-  bothScoresFilled(matchId: number): boolean {
+  private bothScoresFilled(matchId: number): boolean {
     const s = this.scores[matchId];
     return !!s && this.isFilled(s.a) && this.isFilled(s.b);
   }
@@ -284,7 +319,8 @@ export class MatchesComponent implements OnInit {
   }
 
   canMakePronostic(match: MatchDTO): boolean {
-    return !match.resultat && !this.isMatchPast(match.dateMatch);
+    // Une compétition archivée est close, quel que soit l'état du match
+    return !this.cloturee && !match.resultat && !this.isMatchPast(match.dateMatch);
   }
 
   getMatchStatus(match: MatchDTO): string {

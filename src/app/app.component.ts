@@ -1,8 +1,9 @@
 // app.component.ts
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './services/auth.service';
+import { SessionService } from './services/session.service';
 import { ToastComponent } from './components/toast/toast.component';
 
 @Component({
@@ -12,14 +13,19 @@ import { ToastComponent } from './components/toast/toast.component';
   template: `
     <header class="header">
       <div class="header-inner">
-        <a routerLink="/matches" class="brand">
+        <a routerLink="/championnats" class="brand">
           <span class="brand-icon">⚽</span>
           <span class="brand-name">My<em>Prono</em></span>
         </a>
 
+        <!--
+          Une entrée par rubrique du produit. La Ligue des Champions (V2) et les
+          coupes internationales (V3) viendront s'ajouter ici.
+        -->
         <nav class="nav">
-          <a routerLink="/matches" routerLinkActive="active" class="nav-link">Matchs</a>
-          <a *ngIf="auth.user$ | async" routerLink="/classement" routerLinkActive="active" class="nav-link">Classement</a>
+          <a routerLink="/championnats" routerLinkActive="active" class="nav-link">Championnats</a>
+          <a *ngIf="auth.user$ | async" routerLink="/champions-league" routerLinkActive="active" class="nav-link">Ligue des Champions</a>
+          <a *ngIf="auth.user$ | async" routerLink="/coupes" routerLinkActive="active" class="nav-link">Coupes</a>
           <a *ngIf="auth.user$ | async" routerLink="/ligues" routerLinkActive="active" class="nav-link">Ligues</a>
           <a *ngIf="(auth.user$ | async)?.role === 'ADMIN'" routerLink="/admin" routerLinkActive="active" class="nav-link">Administration</a>
         </nav>
@@ -54,8 +60,52 @@ import { ToastComponent } from './components/toast/toast.component';
     </footer>
 
     <app-toast></app-toast>
+
+    <!-- Avertissement avant déconnexion pour inactivité -->
+    <div class="session-overlay" *ngIf="(session.avertissement$ | async) as restant">
+      <div class="session-dialog card" role="alertdialog" aria-live="assertive">
+        <h3>Toujours là ?</h3>
+        <p>
+          Vous allez être déconnecté dans <strong>{{ restant }}</strong>
+          seconde{{ restant > 1 ? 's' : '' }} faute d'activité.
+        </p>
+        <button type="button" class="btn btn-primary" (click)="resterConnecte()">
+          Rester connecté
+        </button>
+      </div>
+    </div>
   `,
   styles: [`
+    /* Avertissement d'inactivité : au-dessus de tout, y compris des toasts */
+    .session-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      z-index: 1000;
+    }
+
+    .session-dialog {
+      max-width: 22rem;
+      width: 100%;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .session-dialog h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .session-dialog p {
+      color: var(--text-2);
+      font-size: 0.9rem;
+      margin-bottom: 1.1rem;
+    }
+
     .header {
       position: sticky;
       top: 0;
@@ -71,7 +121,15 @@ import { ToastComponent } from './components/toast/toast.component';
       height: 64px;
       display: flex;
       align-items: center;
-      gap: 2rem;
+      /* Écart resserré sur mobile : 2rem de part et d'autre de la navigation
+         coûtaient à eux seuls un sixième de la largeur d'écran. */
+      gap: 0.75rem;
+    }
+
+    @media (min-width: 700px) {
+      .header-inner {
+        gap: 2rem;
+      }
     }
 
     .brand {
@@ -98,10 +156,25 @@ import { ToastComponent } from './components/toast/toast.component';
       color: #34d399;
     }
 
+    /*
+      Cinq rubriques ne tiennent pas sur 375 px. Plutôt que de tronquer les
+      libellés ou de faire déborder la page, la barre défile horizontalement —
+      même parti pris que les sélecteurs de phase et de groupe.
+      min-width: 0 est indispensable : sans lui, un conteneur flex refuse de
+      passer sous la largeur de son contenu et pousse le menu hors de l'écran.
+    */
     .nav {
       display: flex;
       gap: 0.25rem;
       flex: 1;
+      min-width: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .nav::-webkit-scrollbar {
+      display: none;
     }
 
     .nav-link {
@@ -109,6 +182,8 @@ import { ToastComponent } from './components/toast/toast.component';
       text-decoration: none;
       font-size: 0.9rem;
       font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
       padding: 0.5rem 0.9rem;
       border-radius: 8px;
       transition: color 0.15s ease, background-color 0.15s ease;
@@ -298,11 +373,23 @@ import { ToastComponent } from './components/toast/toast.component';
     }
   `]
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'my-pronostic-frontend';
   menuOpen = false;
 
-  constructor(public auth: AuthService, private router: Router) {}
+  constructor(
+    public auth: AuthService,
+    public session: SessionService,
+    private router: Router
+  ) {}
+
+  ngOnInit() {
+    this.session.demarrer();
+  }
+
+  resterConnecte() {
+    this.session.prolonger();
+  }
 
   toggleMenu(event: Event) {
     event.stopPropagation();

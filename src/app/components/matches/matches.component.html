@@ -1,36 +1,21 @@
 <div class="matches-container">
-  <div class="page-header">
-    <h2>Matchs</h2>
-    <p class="subtitle">Consultez les matchs et déposez vos pronostics.</p>
-  </div>
-
-  <div class="competition-bar" *ngIf="competitions.length > 1">
-    <button
-      *ngFor="let c of competitions"
-      type="button"
-      class="competition-pill"
-      [class.active]="selectedCompetition === c.code"
-      (click)="selectCompetition(c.code)">
-      {{ c.icone }} {{ c.name }}
-    </button>
-  </div>
-
-  <app-favoris *ngIf="auth.isLoggedIn" [competition]="selectedCompetition"
-               [competitionName]="selectedCompetitionName"></app-favoris>
-
   <!-- Championnats : navigation par journée -->
   <div class="journee-bar" *ngIf="journeeMode">
     <button type="button" class="journee-nav" (click)="prevJournee()"
             [disabled]="!canPrevJournee" aria-label="Journée précédente">◀</button>
     <select class="journee-select" [(ngModel)]="selectedJournee" (ngModelChange)="applyFilter()">
-      <option *ngFor="let j of journees" [ngValue]="j">Journée {{ j }}</option>
+      <option *ngFor="let j of journees" [ngValue]="j">{{ libelleJournee(j) }}</option>
     </select>
     <button type="button" class="journee-nav" (click)="nextJournee()"
             [disabled]="!canNextJournee" aria-label="Journée suivante">▶</button>
   </div>
 
-  <!-- Coupes (sans journée, ex. Coupe du Monde) : filtres par statut -->
-  <div class="filter-bar" *ngIf="!journeeMode">
+  <!--
+    Filtres par statut : uniquement pour une compétition sans journée ni phase
+    (ex. Coupe du Monde). Une phase sélectionnée se suffit à elle-même — la
+    finale, par exemple, tient en un seul match.
+  -->
+  <div class="filter-bar" *ngIf="!journeeMode && !phase">
     <button
       *ngFor="let f of filters"
       type="button"
@@ -67,32 +52,31 @@
 
       <div class="pronostic-section" *ngIf="canMakePronostic(match) && auth.isLoggedIn">
         <label>Votre pronostic</label>
-        <div class="pronostic-input">
-          <div class="score-fields">
-            <input
-              type="number" min="0" inputmode="numeric"
-              class="score-box"
-              [attr.aria-label]="'Buts ' + match.equipe1"
-              [(ngModel)]="scores[match.id!].a"
-              (keyup.enter)="submitPronostic(match.id!)">
-            <span class="score-sep">–</span>
-            <input
-              type="number" min="0" inputmode="numeric"
-              class="score-box"
-              [attr.aria-label]="'Buts ' + match.equipe2"
-              [(ngModel)]="scores[match.id!].b"
-              (keyup.enter)="submitPronostic(match.id!)">
-          </div>
-          <button
-            type="button"
-            (click)="submitPronostic(match.id!)"
-            class="btn btn-primary"
-            [disabled]="!bothScoresFilled(match.id!)">
-            {{ myPronostics[match.id!] ? 'Modifier' : 'Valider' }}
-          </button>
+        <div class="score-fields">
+          <input
+            #homeBox
+            type="number" min="0" inputmode="numeric"
+            class="score-box"
+            [attr.aria-label]="'Buts ' + match.equipe1"
+            [(ngModel)]="scores[match.id!].a"
+            (input)="onHomeInput(match.id!, homeBox, awayBox)"
+            (change)="onScoreCommit(match.id!)"
+            (keyup.enter)="onScoreCommit(match.id!)">
+          <span class="score-sep">–</span>
+          <input
+            #awayBox
+            type="number" min="0" inputmode="numeric"
+            class="score-box"
+            [attr.aria-label]="'Buts ' + match.equipe2"
+            [(ngModel)]="scores[match.id!].b"
+            (change)="onScoreCommit(match.id!)"
+            (keyup.enter)="onScoreCommit(match.id!)">
         </div>
         <p class="prono-hint" *ngIf="myPronostics[match.id!]">
           Modifiable jusqu'au coup d'envoi.
+        </p>
+        <p class="prono-hint" *ngIf="!myPronostics[match.id!]">
+          Enregistrement automatique.
         </p>
       </div>
 
@@ -104,7 +88,13 @@
         🎯 Votre pronostic : <strong>{{ myPronostics[match.id!].pronostic }}</strong>
       </div>
 
-      <div class="expired-message" *ngIf="!match.resultat && isMatchPast(match.dateMatch) && !myPronostics[match.id!]">
+      <!-- Sur une compétition archivée, on explique la fermeture plutôt que de
+           laisser croire à un simple retard de saisie -->
+      <div class="expired-message" *ngIf="cloturee && !myPronostics[match.id!]">
+        📁 Compétition terminée — consultation seule
+      </div>
+
+      <div class="expired-message" *ngIf="!cloturee && !match.resultat && isMatchPast(match.dateMatch) && !myPronostics[match.id!]">
         ⏰ Temps écoulé pour les pronostics
       </div>
     </div>

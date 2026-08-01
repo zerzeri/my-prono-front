@@ -3,7 +3,6 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ClassementEntry, LigueDTO, LigueService } from '../../services/ligue.service';
-import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { Competition, CompetitionService } from '../../services/competition.service';
 
@@ -85,10 +84,15 @@ import { Competition, CompetitionService } from '../../services/competition.serv
         <div class="classement-competitions" *ngIf="competitions.length > 1">
           <button *ngFor="let c of competitions" type="button" class="mini-pill"
                   [class.active]="selectedCompetition === c.code"
+                  [class.archive]="c.cloturee"
+                  [title]="c.cloturee ? 'Compétition terminée — classement figé' : ''"
                   (click)="selectCompetition(c.code)">
-            {{ c.icone }} {{ c.name }}
+            {{ c.icone }} {{ c.name }}<span *ngIf="c.cloturee" class="marque-archive">📁</span>
           </button>
         </div>
+        <p class="archive-note" *ngIf="competitionSelectionneeArchivee">
+          📁 Compétition terminée : ce classement est définitif.
+        </p>
         <div *ngIf="loadingClassement" class="spinner"></div>
         <div class="table-wrap" *ngIf="!loadingClassement">
           <table class="classement-table">
@@ -105,9 +109,9 @@ import { Competition, CompetitionService } from '../../services/competition.serv
             </thead>
             <tbody>
               <tr *ngFor="let entry of classement; let i = index"
-                  [class.me]="entry.email === auth.user?.email">
+                  [class.me]="entry.moi">
                 <td class="rank">{{ i + 1 }}</td>
-                <td class="col-joueur">{{ entry.email }}</td>
+                <td class="col-joueur">{{ entry.username }}</td>
                 <td class="points">{{ entry.points }}</td>
                 <td>{{ entry.scoresExacts }}</td>
                 <td>{{ entry.bonsResultats }}</td>
@@ -279,6 +283,22 @@ import { Competition, CompetitionService } from '../../services/competition.serv
       color: #fff;
     }
 
+    /* Compétition archivée : consultable, mais son classement ne bougera plus */
+    .mini-pill.archive {
+      border-style: dashed;
+    }
+
+    .marque-archive {
+      margin-left: 0.3rem;
+      font-size: 0.7rem;
+    }
+
+    .archive-note {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
     .table-wrap {
       overflow-x: auto;
     }
@@ -365,6 +385,11 @@ export class LiguesComponent implements OnInit {
   competitions: Competition[] = [];
   selectedCompetition = '';
 
+  /** Compétition terminée : son classement de ligue est figé. */
+  get competitionSelectionneeArchivee(): boolean {
+    return this.competitions.find(c => c.code === this.selectedCompetition)?.cloturee ?? false;
+  }
+
   newName = '';
   joinInput = '';
   joinError = '';
@@ -376,12 +401,14 @@ export class LiguesComponent implements OnInit {
 
   constructor(
     private ligueService: LigueService,
-    public auth: AuthService,
     private toast: ToastService,
     private competitionService: CompetitionService
   ) {}
 
   ngOnInit() {
+    // Toutes les compétitions, toutes sections confondues : une ligue peut
+    // suivre un championnat comme une coupe. Les archives sont incluses —
+    // consulter le classement figé d'une compétition passée a du sens.
     this.competitionService.list().subscribe({
       next: (competitions) => {
         this.competitions = competitions;

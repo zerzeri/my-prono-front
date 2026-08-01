@@ -1,29 +1,13 @@
 // src/app/components/classement/classement.component.ts
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ClassementLigne, Competition, CompetitionService } from '../../services/competition.service';
+import { ClassementLigne, CompetitionService } from '../../services/competition.service';
 
 @Component({
   selector: 'app-classement',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="page-header">
-      <h2>Classement</h2>
-      <p class="subtitle">Le tableau officiel de chaque championnat.</p>
-    </div>
-
-    <div class="competition-bar" *ngIf="championnats.length > 1">
-      <button
-        *ngFor="let c of championnats"
-        type="button"
-        class="competition-pill"
-        [class.active]="selected === c.code"
-        (click)="select(c.code)">
-        {{ c.icone }} {{ c.name }}
-      </button>
-    </div>
-
     <div *ngIf="loading" class="spinner"></div>
 
     <div *ngIf="!loading && classement.length === 0" class="empty-state">
@@ -64,37 +48,6 @@ import { ClassementLigne, Competition, CompetitionService } from '../../services
     </div>
   `,
   styles: [`
-    .competition-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 1.25rem;
-    }
-
-    .competition-pill {
-      font-family: inherit;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-2);
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 0.5rem 0.9rem;
-      cursor: pointer;
-      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-    }
-
-    .competition-pill:hover {
-      border-color: var(--brand);
-      color: var(--brand-strong);
-    }
-
-    .competition-pill.active {
-      background: var(--brand);
-      border-color: var(--brand);
-      color: #fff;
-    }
-
     .table-card {
       padding: 0.5rem;
     }
@@ -146,43 +99,26 @@ import { ClassementLigne, Competition, CompetitionService } from '../../services
     }
   `]
 })
-export class ClassementComponent implements OnInit {
-  championnats: Competition[] = [];
-  selected = '';
+export class ClassementComponent implements OnChanges {
+  /** Compétition à afficher, fournie par la rubrique parente. */
+  @Input() competition!: string;
+
   classement: ClassementLigne[] = [];
   loading = true;
 
   constructor(private competitionService: CompetitionService) {}
 
-  ngOnInit() {
-    this.competitionService.list().subscribe({
-      next: (competitions) => {
-        // Seules les compétitions ayant un tableau de classement (championnats)
-        this.championnats = competitions.filter(c => c.hasStandings);
-        const saved = this.competitionService.selectedCode;
-        this.selected = this.championnats.some(c => c.code === saved)
-          ? saved!
-          : (this.championnats[0]?.code ?? '');
-        this.load();
-      },
-      error: () => this.loading = false
-    });
-  }
-
-  select(code: string) {
-    if (code === this.selected) return;
-    this.selected = code;
-    this.competitionService.selectedCode = code;
+  ngOnChanges() {
     this.load();
   }
 
   private load() {
-    if (!this.selected) {
+    if (!this.competition) {
       this.loading = false;
       return;
     }
     this.loading = true;
-    this.competitionService.classement(this.selected).subscribe({
+    this.competitionService.classement(this.competition).subscribe({
       next: (rows) => {
         this.classement = rows;
         this.loading = false;

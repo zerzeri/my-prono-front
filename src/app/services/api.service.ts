@@ -18,6 +18,10 @@ export interface MatchDTO {
   dateMatch: string; // Format ISO string pour les échanges avec l'API
   competition?: string;
   journee?: number;
+  // Phase de la compétition : REGULAR_SEASON, GROUP_STAGE, LAST_16, FINAL…
+  phase?: string;
+  // Groupe de poule (GROUP_A…) pour les compétitions qui en ont
+  groupe?: string;
 }
 
 export interface PronosticDTO {
@@ -26,15 +30,12 @@ export interface PronosticDTO {
   match?: number; // ID du match
 }
 
-export interface IndividuDTO {
-  id?: number;
-  name: string;
-}
-
-export interface JoueurDTO {
-  id?: number;
-  name: string;
-  poste?: string;
+/** Fiche d'un compte, pour l'écran d'administration. */
+export interface UtilisateurDTO {
+  email: string;
+  username: string;
+  role: 'ADMIN' | 'USER';
+  dateCreation: string;
 }
 
 export interface SyncResult {
@@ -126,26 +127,26 @@ private readonly baseUrl = environment.apiUrl;
     return this.http.delete<void>(`${this.baseUrl}/pronostics/${id}`);
   }
 
-  // Individus
-  getAllIndividus(): Observable<IndividuDTO[]> {
-    return this.http.get<IndividuDTO[]>(`${this.baseUrl}/individus`);
-  }
-
-  createIndividu(individu: IndividuDTO): Observable<number> {
-    return this.http.post<number>(`${this.baseUrl}/individus`, individu);
-  }
-
   // Synchronisation d'une compétition (admin)
   syncCompetition(code: string): Observable<SyncResult> {
     return this.http.post<SyncResult>(`${this.baseUrl}/admin/competitions/${code}/sync`, {});
   }
 
-  // Joueurs
-  getAllJoueurs(): Observable<JoueurDTO[]> {
-    return this.http.get<JoueurDTO[]>(`${this.baseUrl}/joueurs`);
+  // Comptes (admin)
+  listerUtilisateurs(): Observable<UtilisateurDTO[]> {
+    return this.http.get<UtilisateurDTO[]>(`${this.baseUrl}/admin/utilisateurs`);
   }
 
-  createJoueur(joueur: JoueurDTO): Observable<number> {
-    return this.http.post<number>(`${this.baseUrl}/joueurs`, joueur);
+  // Envoie un lien de réinitialisation de mot de passe à l'utilisateur (admin)
+  envoyerReinitialisation(email: string): Observable<void> {
+    return this.http.post<void>(
+      `${this.baseUrl}/admin/utilisateurs/${encodeURIComponent(email)}/reinitialisation`, {});
   }
+
+  // Clôture d'une compétition terminée (admin) : archive consultable
+  setCloture(code: string, cloturee: boolean): Observable<{ cloturee: boolean }> {
+    return this.http.put<{ cloturee: boolean }>(
+      `${this.baseUrl}/admin/competitions/${code}/cloture`, { cloturee });
+  }
+
 }

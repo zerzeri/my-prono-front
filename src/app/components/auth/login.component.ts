@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { messageErreur } from '../../services/http-error';
 
 @Component({
   selector: 'app-login',
@@ -15,6 +16,9 @@ import { AuthService } from '../../services/auth.service';
         <h2>Connexion</h2>
         <p class="auth-subtitle">Connectez-vous pour accéder à votre compte.</p>
 
+        <div *ngIf="expire" class="alert alert-warning">
+          Vous avez été déconnecté après une période d'inactivité.
+        </div>
         <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
 
         <form (ngSubmit)="submit()">
@@ -53,18 +57,26 @@ export class LoginComponent {
   error = '';
   loading = false;
   showPassword = false;
+  /** Renseigné par la déconnexion automatique, pour expliquer le retour ici. */
+  expire = false;
 
-  constructor(private auth: AuthService, private router: Router, private route: ActivatedRoute) {}
+  constructor(private auth: AuthService, private router: Router, private route: ActivatedRoute) {
+    this.expire = this.route.snapshot.queryParamMap.get('expire') === '1';
+  }
 
   submit() {
     if (!this.identifier || !this.password) return;
     this.loading = true;
     this.error = '';
     this.auth.login(this.identifier, this.password).subscribe({
-      next: () => this.router.navigateByUrl(this.route.snapshot.queryParamMap.get('returnUrl') ?? '/matches'),
+      next: () => this.router.navigateByUrl(this.route.snapshot.queryParamMap.get('returnUrl') ?? '/championnats'),
       error: (err) => {
         this.loading = false;
-        this.error = err.status === 401 ? 'Identifiant ou mot de passe incorrect.' : 'Erreur lors de la connexion.';
+        // Le 401 garde un message volontairement vague, pour ne pas révéler
+        // si le compte existe. Le reste est diagnostiqué finement.
+        this.error = err.status === 401
+          ? 'Identifiant ou mot de passe incorrect.'
+          : messageErreur(err, 'Erreur lors de la connexion.');
       }
     });
   }

@@ -45,16 +45,6 @@ import { ToastService } from '../../services/toast.service';
           <p class="field-hint">3 à 20 caractères : lettres, chiffres, . _ -</p>
         </div>
 
-        <div class="info-row">
-          <label>Mot de passe (crypté)</label>
-          <div class="hash-box">
-            <code>{{ showHash ? info.passwordHash : masked }}</code>
-            <button type="button" class="toggle-hash" (click)="showHash = !showHash">
-              {{ showHash ? '🙈' : '👁️' }}
-            </button>
-          </div>
-          <p class="field-hint">Stocké chiffré (BCrypt) — impossible à lire en clair, même par l'administrateur.</p>
-        </div>
       </div>
 
       <!-- Mot de passe -->
@@ -130,38 +120,12 @@ import { ToastService } from '../../services/toast.service';
       min-width: 0;
     }
 
-    .hash-box {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.5rem 0.6rem;
-    }
-
-    .hash-box code {
-      flex: 1;
-      font-size: 0.78rem;
-      color: var(--text-2);
-      overflow-wrap: anywhere;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    }
-
-    .toggle-hash {
-      background: none;
-      border: none;
-      font-size: 1rem;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
   `]
 })
 export class AccountComponent implements OnInit {
   info: UserInfo | null = null;
   username = '';
   loading = true;
-  showHash = false;
 
   current = '';
   password = '';
@@ -169,10 +133,6 @@ export class AccountComponent implements OnInit {
   showPassword = false;
   savingUsername = false;
   savingPassword = false;
-
-  get masked(): string {
-    return '•'.repeat(Math.min(this.info?.passwordHash.length ?? 24, 40));
-  }
 
   constructor(public auth: AuthService, private toast: ToastService) {}
 
