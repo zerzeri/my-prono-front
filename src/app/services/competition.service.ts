@@ -14,6 +14,8 @@ export interface Competition {
   section: Section;
   hasStandings: boolean;
   hasFavoris: boolean;
+  /** Compétition terminée : consultable en archive, fermée aux pronostics. */
+  cloturee: boolean;
 }
 
 export interface ClassementLigne {

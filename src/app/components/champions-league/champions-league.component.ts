@@ -58,7 +58,8 @@ import { libellePhase, ordonnerPhases, PHASE_LIGUE } from '../../models/phase.mo
 
       <app-matches *ngIf="selectedPhase"
                    [competition]="competition.code"
-                   [phase]="selectedPhase"></app-matches>
+                   [phase]="selectedPhase"
+                   [cloturee]="competition.cloturee"></app-matches>
     </ng-container>
 
     <app-tableau-final *ngIf="tab === 'tableau' && competition"

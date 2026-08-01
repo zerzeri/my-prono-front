@@ -88,7 +88,13 @@
         🎯 Votre pronostic : <strong>{{ myPronostics[match.id!].pronostic }}</strong>
       </div>
 
-      <div class="expired-message" *ngIf="!match.resultat && isMatchPast(match.dateMatch) && !myPronostics[match.id!]">
+      <!-- Sur une compétition archivée, on explique la fermeture plutôt que de
+           laisser croire à un simple retard de saisie -->
+      <div class="expired-message" *ngIf="cloturee && !myPronostics[match.id!]">
+        📁 Compétition terminée — consultation seule
+      </div>
+
+      <div class="expired-message" *ngIf="!cloturee && !match.resultat && isMatchPast(match.dateMatch) && !myPronostics[match.id!]">
         ⏰ Temps écoulé pour les pronostics
       </div>
     </div>

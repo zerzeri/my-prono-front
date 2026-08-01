@@ -19,8 +19,14 @@ import { libellePhase, ordonnerPhases, PHASE_POULES } from '../../models/phase.m
     TableauFinalComponent],
   template: `
     <div class="page-header">
-      <h2>{{ competition?.name || 'Coupes internationales' }}</h2>
-      <p class="subtitle">Phase de poules puis tableau final.</p>
+      <h2>
+        {{ competition?.name || 'Coupes internationales' }}
+        <span class="badge badge-expired" *ngIf="competition?.cloturee">📁 Archivé</span>
+      </h2>
+      <p class="subtitle" *ngIf="!competition?.cloturee">Phase de poules puis tableau final.</p>
+      <p class="subtitle" *ngIf="competition?.cloturee">
+        Compétition terminée : résultats consultables, pronostics fermés.
+      </p>
     </div>
 
     <!-- Plusieurs coupes coexisteront : Coupe du Monde, Euro… -->
@@ -68,7 +74,8 @@ import { libellePhase, ordonnerPhases, PHASE_POULES } from '../../models/phase.m
 
       <app-matches *ngIf="selectedPhase"
                    [competition]="competition.code"
-                   [phase]="selectedPhase"></app-matches>
+                   [phase]="selectedPhase"
+                   [cloturee]="competition.cloturee"></app-matches>
     </ng-container>
 
     <app-poules *ngIf="tab === 'poules' && competition"

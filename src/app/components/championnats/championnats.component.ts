@@ -42,7 +42,8 @@ import { ClassementComponent } from '../classement/classement.component';
       <p>Aucun championnat disponible.</p>
     </div>
 
-    <app-matches *ngIf="selected && tab === 'matchs'" [competition]="selected"></app-matches>
+    <app-matches *ngIf="selected && tab === 'matchs'" [competition]="selected"
+                 [cloturee]="selectedCloturee"></app-matches>
     <app-classement *ngIf="selected && tab === 'classement'" [competition]="selected"></app-classement>
   `,
   styles: [`
@@ -117,6 +118,11 @@ export class ChampionnatsComponent implements OnInit {
 
   get selectedHasStandings(): boolean {
     return this.competitions.find(c => c.code === this.selected)?.hasStandings ?? false;
+  }
+
+  /** Un championnat terminé passe en archive : consultable, non pronostiquable. */
+  get selectedCloturee(): boolean {
+    return this.competitions.find(c => c.code === this.selected)?.cloturee ?? false;
   }
 
   ngOnInit() {

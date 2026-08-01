@@ -124,4 +124,10 @@ private readonly baseUrl = environment.apiUrl;
     return this.http.post<SyncResult>(`${this.baseUrl}/admin/competitions/${code}/sync`, {});
   }
 
+  // Clôture d'une compétition terminée (admin) : archive consultable
+  setCloture(code: string, cloturee: boolean): Observable<{ cloturee: boolean }> {
+    return this.http.put<{ cloturee: boolean }>(
+      `${this.baseUrl}/admin/competitions/${code}/cloture`, { cloturee });
+  }
+
 }

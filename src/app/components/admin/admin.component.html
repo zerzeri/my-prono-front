@@ -52,6 +52,23 @@
         {{ syncMessage }}
       </div>
 
+      <!-- Archivage : une compétition terminée reste consultable mais fermée -->
+      <div class="favoris-toggle">
+        <div class="favoris-toggle-text">
+          <strong>Compétition terminée</strong>
+          <p class="sync-hint">
+            Archive la compétition : résultats et classements restent consultables,
+            mais pronostics et favoris sont définitivement fermés. Elle sort aussi
+            de la synchronisation automatique.
+          </p>
+        </div>
+        <label class="switch" title="Archiver / rouvrir la compétition">
+          <input type="checkbox" [ngModel]="selectedCloturee"
+                 (ngModelChange)="setCloture($event)" [disabled]="togglingCloture">
+          <span class="slider"></span>
+        </label>
+      </div>
+
       <!-- Favoris : uniquement sur les compétitions concernées (pas les championnats nationaux) -->
       <div class="favoris-toggle" *ngIf="selectedHasFavoris">
         <div class="favoris-toggle-text">

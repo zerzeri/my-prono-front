@@ -78,10 +78,38 @@ export class AdminComponent implements OnInit {
     return this.competitions.find(c => c.code === this.selectedCompetition)?.hasFavoris ?? false;
   }
 
+  get selectedCloturee(): boolean {
+    return this.competitions.find(c => c.code === this.selectedCompetition)?.cloturee ?? false;
+  }
+
+  togglingCloture = false;
+
+  /** Clôture ou rouvre la compétition : archive consultable, saisie fermée. */
+  setCloture(cloturee: boolean) {
+    this.togglingCloture = true;
+    this.apiService.setCloture(this.selectedCompetition, cloturee).subscribe({
+      next: (res) => {
+        const c = this.competitions.find(x => x.code === this.selectedCompetition);
+        if (c) {
+          c.cloturee = res.cloturee;
+        }
+        this.togglingCloture = false;
+        this.toast.success(res.cloturee
+          ? 'Compétition archivée : consultable, mais fermée aux pronostics.'
+          : 'Compétition rouverte aux pronostics.');
+      },
+      error: () => {
+        this.togglingCloture = false;
+        this.toast.error('Erreur lors du changement de statut.');
+      }
+    });
+  }
+
   ngOnInit() {
     this.loadEquipes();
-    // V1 : seule la section Championnats est administrable.
-    this.competitionService.list('CHAMPIONNAT').subscribe({
+    // Toutes les sections sont administrables : la synchronisation et la clôture
+    // valent pour les championnats comme pour les coupes.
+    this.competitionService.list().subscribe({
       next: (competitions) => {
         this.competitions = competitions;
         const saved = this.competitionService.selectedCode;

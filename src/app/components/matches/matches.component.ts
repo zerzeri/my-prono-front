@@ -24,6 +24,9 @@ export class MatchesComponent implements OnInit, OnChanges {
    */
   @Input() phase?: string;
 
+  /** Compétition archivée : les matchs restent visibles, la saisie disparaît. */
+  @Input() cloturee = false;
+
   /** Tous les matchs de la compétition, avant filtrage par phase. */
   private toutes: MatchDTO[] = [];
 
@@ -316,7 +319,8 @@ export class MatchesComponent implements OnInit, OnChanges {
   }
 
   canMakePronostic(match: MatchDTO): boolean {
-    return !match.resultat && !this.isMatchPast(match.dateMatch);
+    // Une compétition archivée est close, quel que soit l'état du match
+    return !this.cloturee && !match.resultat && !this.isMatchPast(match.dateMatch);
   }
 
   getMatchStatus(match: MatchDTO): string {
