@@ -367,3 +367,70 @@
   text-align: center;
   font-weight: 600;
 }
+
+/* Onglet Profils : même présentation que la liste des matchs */
+.profils-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.profil-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.profil-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.profil-titre {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.35rem;
+}
+
+.profil-titre h5 {
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.profil-meta {
+  font-size: 0.82rem;
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
+.profil-actions {
+  flex-shrink: 0;
+}
+
+.profil-date {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 0.15rem;
+}
+
+/* Sur mobile, le bouton passe sous les informations : côte à côte, il
+   comprimait l'email au point de le couper en plein milieu. */
+@media (max-width: 640px) {
+  .profil-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .profil-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+}

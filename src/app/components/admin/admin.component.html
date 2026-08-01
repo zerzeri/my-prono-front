@@ -18,6 +18,12 @@
       (click)="setActiveTab('equipes')">
       Équipes
     </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'profils'"
+      (click)="setActiveTab('profils')">
+      Profils
+    </button>
   </div>
 
   <!-- Sélecteur de compétition (onglet Matchs) -->
@@ -238,6 +244,59 @@
             (click)="deleteEquipe(equipe.id!)">
             Supprimer
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gestion des profils -->
+  <div *ngIf="activeTab === 'profils'" class="tab-content">
+    <div class="card section">
+      <h3>Comptes</h3>
+      <p class="sync-hint">
+        Tous les comptes inscrits. Le lien de réinitialisation est envoyé par mail
+        à l'utilisateur, et reste valable 30 minutes.
+      </p>
+
+      <div class="form-group">
+        <label for="filtreProfils">Rechercher</label>
+        <input type="text" id="filtreProfils" name="filtreProfils"
+               [(ngModel)]="filtreProfils"
+               placeholder="Email ou nom d'utilisateur">
+      </div>
+
+      <p class="sync-hint" *ngIf="!loadingProfils">
+        {{ profilsFiltres.length }} compte{{ profilsFiltres.length > 1 ? 's' : '' }}
+        <span *ngIf="filtreProfils.trim()">sur {{ profils.length }}</span>
+      </p>
+
+      <div *ngIf="loadingProfils" class="spinner"></div>
+
+      <div *ngIf="!loadingProfils && profilsFiltres.length === 0" class="empty-state">
+        <span class="empty-icon">🔍</span>
+        <p>Aucun compte ne correspond à cette recherche.</p>
+      </div>
+
+      <div class="profils-liste">
+        <div *ngFor="let u of profilsFiltres" class="profil-item">
+          <div class="profil-info">
+            <div class="profil-titre">
+              <h5>{{ u.username }}</h5>
+              <span class="badge" [class.badge-finished]="u.role === 'ADMIN'"
+                    [class.badge-upcoming]="u.role !== 'ADMIN'">
+                {{ u.role === 'ADMIN' ? 'Administrateur' : 'Joueur' }}
+              </span>
+            </div>
+            <p class="profil-meta">✉️ {{ u.email }}</p>
+            <p class="profil-date">Inscrit le {{ formatDate(u.dateCreation) }}</p>
+          </div>
+          <div class="profil-actions">
+            <button class="btn btn-secondary btn-sm"
+                    [disabled]="envoiEnCours === u.email"
+                    (click)="envoyerReinitialisation(u)">
+              {{ envoiEnCours === u.email ? 'Envoi…' : '🔑 Réinitialiser' }}
+            </button>
+          </div>
         </div>
       </div>
     </div>

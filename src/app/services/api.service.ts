@@ -30,6 +30,14 @@ export interface PronosticDTO {
   match?: number; // ID du match
 }
 
+/** Fiche d'un compte, pour l'écran d'administration. */
+export interface UtilisateurDTO {
+  email: string;
+  username: string;
+  role: 'ADMIN' | 'USER';
+  dateCreation: string;
+}
+
 export interface SyncResult {
   equipesCreees: number;
   matchsCrees: number;
@@ -122,6 +130,17 @@ private readonly baseUrl = environment.apiUrl;
   // Synchronisation d'une compétition (admin)
   syncCompetition(code: string): Observable<SyncResult> {
     return this.http.post<SyncResult>(`${this.baseUrl}/admin/competitions/${code}/sync`, {});
+  }
+
+  // Comptes (admin)
+  listerUtilisateurs(): Observable<UtilisateurDTO[]> {
+    return this.http.get<UtilisateurDTO[]>(`${this.baseUrl}/admin/utilisateurs`);
+  }
+
+  // Envoie un lien de réinitialisation de mot de passe à l'utilisateur (admin)
+  envoyerReinitialisation(email: string): Observable<void> {
+    return this.http.post<void>(
+      `${this.baseUrl}/admin/utilisateurs/${encodeURIComponent(email)}/reinitialisation`, {});
   }
 
   // Clôture d'une compétition terminée (admin) : archive consultable

@@ -5,7 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { MatchDTO, EquipeDTO } from '../../models';
 import { MatchService } from '../../services/match.service';
 import { EquipeService } from '../../services/equipe.service';
-import { ApiService } from '../../services/api.service';
+import { ApiService, UtilisateurDTO } from '../../services/api.service';
+import { messageErreur } from '../../services/http-error';
 import { ToastService } from '../../services/toast.service';
 import { FavorisService } from '../../services/favoris.service';
 import { Competition, CompetitionService } from '../../services/competition.service';
@@ -38,6 +39,13 @@ export class AdminComponent implements OnInit {
   resButeur = '';
   resPasseur = '';
   savingResultats = false;
+
+  // Onglet Profils
+  profils: UtilisateurDTO[] = [];
+  filtreProfils = '';
+  loadingProfils = false;
+  /** Email dont l'envoi est en cours, pour désactiver le bouton concerné. */
+  envoiEnCours: string | null = null;
 
   competitions: Competition[] = [];
   selectedCompetition = '';
@@ -202,6 +210,61 @@ export class AdminComponent implements OnInit {
   setActiveTab(tab: string) {
     this.activeTab = tab;
     this.closeMatchForm();
+    // Les comptes ne sont chargés qu'à l'ouverture de leur onglet
+    if (tab === 'profils' && this.profils.length === 0) {
+      this.chargerProfils();
+    }
+  }
+
+  private chargerProfils() {
+    this.loadingProfils = true;
+    this.apiService.listerUtilisateurs().subscribe({
+      next: (profils) => {
+        this.profils = profils;
+        this.loadingProfils = false;
+      },
+      error: (err) => {
+        this.loadingProfils = false;
+        this.toast.error(messageErreur(err, 'Erreur lors du chargement des comptes.'));
+      }
+    });
+  }
+
+  /**
+   * Filtrage côté client : avec une vingtaine de comptes, une recherche
+   * serveur serait disproportionnée. Porte sur l'email et le pseudo.
+   */
+  get profilsFiltres(): UtilisateurDTO[] {
+    const recherche = this.filtreProfils.trim().toLowerCase();
+    if (!recherche) {
+      return this.profils;
+    }
+    return this.profils.filter(u =>
+      u.email.toLowerCase().includes(recherche)
+      || (u.username ?? '').toLowerCase().includes(recherche));
+  }
+
+  /**
+   * Envoi d'un mail à un utilisateur réel : on demande confirmation, et le
+   * message de succès nomme le destinataire pour lever toute ambiguïté.
+   */
+  envoyerReinitialisation(u: UtilisateurDTO) {
+    const accord = confirm(
+      `Envoyer un lien de réinitialisation de mot de passe à ${u.username} (${u.email}) ?`);
+    if (!accord) {
+      return;
+    }
+    this.envoiEnCours = u.email;
+    this.apiService.envoyerReinitialisation(u.email).subscribe({
+      next: () => {
+        this.envoiEnCours = null;
+        this.toast.success(`Lien de réinitialisation envoyé à ${u.email}.`);
+      },
+      error: (err) => {
+        this.envoiEnCours = null;
+        this.toast.error(messageErreur(err, "Erreur lors de l'envoi du lien."));
+      }
+    });
   }
 
   syncCompetition() {
