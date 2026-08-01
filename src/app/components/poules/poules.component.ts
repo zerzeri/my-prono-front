@@ -6,7 +6,7 @@
 // fournisseur ne les donne pas pour une coupe.
 import { Component, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CompetitionService, Poule } from '../../services/competition.service';
+import { ClassementLigne, CompetitionService, Poule } from '../../services/competition.service';
 
 @Component({
   selector: 'app-poules',
@@ -49,9 +49,48 @@ import { CompetitionService, Poule } from '../../services/competition.service';
               </tr>
             </thead>
             <tbody>
-              <!-- Les deux premiers d'un groupe sont qualifiés dans la plupart
-                   des formats : on les distingue visuellement. -->
-              <tr *ngFor="let l of selected.classement" [class.qualifie]="l.position <= 2">
+              <!-- La qualification vient du serveur, qui la déduit des matchs du
+                   tour suivant. Supposer « les deux premiers » serait faux : le
+                   Mondial 2026 repêche aussi les huit meilleurs troisièmes. -->
+              <tr *ngFor="let l of selected.classement" [class.qualifie]="l.qualifie">
+                <td class="rank">{{ l.position }}</td>
+                <td class="col-team">{{ l.team }}</td>
+                <td>{{ l.joues }}</td>
+                <td>{{ l.gagnes }}</td>
+                <td>{{ l.nuls }}</td>
+                <td>{{ l.perdus }}</td>
+                <td>{{ l.difference > 0 ? '+' : '' }}{{ l.difference }}</td>
+                <td class="points">{{ l.points }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Classement transversal des troisièmes : plusieurs formats en
+           repêchent une partie, huit sur douze pour le Mondial 2026. -->
+      <div class="card table-card troisiemes" *ngIf="troisiemes.length > 0">
+        <h3 class="groupe-titre">Classement des troisièmes</h3>
+        <p class="explication">
+          {{ nombreTroisiemesQualifies }} des {{ troisiemes.length }} troisièmes
+          poursuivent la compétition.
+        </p>
+        <div class="table-wrap">
+          <table class="classement-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th class="col-team">Équipe</th>
+                <th title="Joués">J</th>
+                <th title="Gagnés">G</th>
+                <th title="Nuls">N</th>
+                <th title="Perdus">P</th>
+                <th title="Différence de buts">Diff</th>
+                <th title="Points">Pts</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let l of troisiemes" [class.qualifie]="l.qualifie">
                 <td class="rank">{{ l.position }}</td>
                 <td class="col-team">{{ l.team }}</td>
                 <td>{{ l.joues }}</td>
@@ -112,6 +151,16 @@ import { CompetitionService, Poule } from '../../services/competition.service';
       font-size: 0.9rem;
       color: var(--text-2);
       padding: 0.5rem 0.5rem 0.25rem;
+    }
+
+    .troisiemes {
+      margin-top: 1.25rem;
+    }
+
+    .explication {
+      font-size: 0.78rem;
+      color: var(--muted);
+      padding: 0 0.5rem 0.5rem;
     }
 
     .table-wrap {
@@ -175,10 +224,15 @@ export class PoulesComponent implements OnChanges {
   @Input() competition!: string;
 
   poules: Poule[] = [];
+  troisiemes: ClassementLigne[] = [];
   selected: Poule | null = null;
   loading = true;
 
   constructor(private competitionService: CompetitionService) {}
+
+  get nombreTroisiemesQualifies(): number {
+    return this.troisiemes.filter(l => l.qualifie).length;
+  }
 
   ngOnChanges() {
     if (!this.competition) {
@@ -187,13 +241,15 @@ export class PoulesComponent implements OnChanges {
     }
     this.loading = true;
     this.competitionService.poules(this.competition).subscribe({
-      next: (poules) => {
-        this.poules = poules;
-        this.selected = poules[0] ?? null;
+      next: (reponse) => {
+        this.poules = reponse.poules;
+        this.troisiemes = reponse.troisiemes;
+        this.selected = reponse.poules[0] ?? null;
         this.loading = false;
       },
       error: () => {
         this.poules = [];
+        this.troisiemes = [];
         this.selected = null;
         this.loading = false;
       }

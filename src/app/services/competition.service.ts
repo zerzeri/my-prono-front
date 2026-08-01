@@ -29,6 +29,8 @@ export interface ClassementLigne {
   butsContre: number;
   difference: number;
   points: number;
+  /** Phases de poules uniquement : l'équipe poursuit au tour suivant. */
+  qualifie: boolean;
 }
 
 /** Classement d'un groupe de poule, calculé par le back à partir des matchs. */
@@ -36,6 +38,12 @@ export interface Poule {
   groupe: string;
   libelle: string;
   classement: ClassementLigne[];
+}
+
+/** Phase de poules : les groupes, plus le classement transversal des troisièmes. */
+export interface Poules {
+  poules: Poule[];
+  troisiemes: ClassementLigne[];
 }
 
 const SELECTED_KEY = 'myprono_competition';
@@ -65,9 +73,9 @@ export class CompetitionService {
     return this.http.get<ClassementLigne[]>(`${this.baseUrl}/competitions/${code}/classement`);
   }
 
-  /** Classements des poules (coupes internationales). */
-  poules(code: string): Observable<Poule[]> {
-    return this.http.get<Poule[]>(`${this.baseUrl}/competitions/${code}/poules`);
+  /** Phase de poules (coupes internationales) : groupes et troisièmes. */
+  poules(code: string): Observable<Poules> {
+    return this.http.get<Poules>(`${this.baseUrl}/competitions/${code}/poules`);
   }
 
   /** Compétition sélectionnée par l'utilisateur (partagée entre Matchs et Favoris). */
